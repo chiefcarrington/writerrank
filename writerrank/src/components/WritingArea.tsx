@@ -18,7 +18,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   isWritingActive,
   onStartWriting,
   onTimeUp,
-  initialText = "", // Used when the component mounts in 'initial' or 'writing' state
+  initialText = "",
   onTextChange,
   locked,
 }) => {
@@ -42,7 +42,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
         textAreaRef.current.focus();
       }
 
-      // Clear any existing interval before starting a new one (belt and braces)
+      // Clear any existing interval before starting a new one
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
@@ -50,7 +50,9 @@ const WritingArea: React.FC<WritingAreaProps> = ({
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
-            clearInterval(timerIntervalRef.current!);
+            if (timerIntervalRef.current) { // Ensure it exists before clearing
+                clearInterval(timerIntervalRef.current);
+            }
             onTimeUp(currentTextRef.current); // Use the ref to get the latest text
             return 0;
           }
@@ -58,13 +60,10 @@ const WritingArea: React.FC<WritingAreaProps> = ({
         });
       }, 1000);
     } else {
-      // If writing is not active, ensure the timer is cleared and reset display
+      // If writing is not active, ensure the timer is cleared
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
-      // Optionally, if you want the timer to show full duration when not active but visible (e.g. before start)
-      // You might adjust this based on whether it's 'initial' state or 'completed' state.
-      // For now, it just stops. `HomePage` handles showing 00:00 on completion.
     }
 
     // Cleanup function: clears interval when component unmounts or `isWritingActive` changes before effect re-runs.
@@ -73,30 +72,16 @@ const WritingArea: React.FC<WritingAreaProps> = ({
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isWritingActive, onTimeUp]); // Dependencies:
-                                    // - `isWritingActive`: Starts/stops the timer.
-                                    // - `onTimeUp`: Needs to be stable (useCallback in HomePage, which it is).
+  }, [isWritingActive, onTimeUp]);
 
   // Effect to propagate text changes to the parent
   useEffect(() => {
-    // Synchronize internal text state with parent if initialText prop changes
-    // This is useful if the parent component could change the text externally after mount
-    // For this app, `initialText` is primarily for the first text when the component appears in writing mode.
-    // However, `HomePage` passes `submission` as `initialText` when `viewMode === 'writing'`.
-    // `submission` updates on every keystroke. This means `initialText` prop changes.
-    // `useState(initialText)` only sets the *initial* state.
-    // If we want `WritingArea`'s text to be strictly controlled by `initialText` prop after mount, we'd do:
-    // setText(initialText);
-    // But this makes `WritingArea` a fully controlled component for its text, which might be what we want.
-    // Let's keep the current behavior where internal `text` state drives updates,
-    // and `initialText` is just for the very start or if `HomePage` specifically clears it.
-    // The `setText("")` in the Start button's onClick is key for reset.
     onTextChange(text);
-  }, [text, onTextChange]); // `onTextChange` should be stable (useCallback in HomePage).
+  }, [text, onTextChange]);
 
 
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!locked && isWritingActive) { // Ensure writing is active and not locked
+    if (!locked && isWritingActive) {
       setText(event.target.value);
     }
   };
@@ -114,13 +99,14 @@ const WritingArea: React.FC<WritingAreaProps> = ({
         value={text}
         onChange={handleTextChange}
         placeholder={isWritingActive ? "Start writing..." : "Click Start to begin..."}
-        disabled={locked || !isWritingActive && viewMode !== 'initial'} // More precise disabled logic
+        disabled={locked || !isWritingActive}
         className="w-full h-64 p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 resize-none text-base"
         aria-label="Writing input"
       />
 
       <div className="mt-4 flex justify-end items-center">
-        {!isWritingActive && !locked && ( // Only show Start button if not active and not locked (i.e., initial state)
+        {/* Show Start button only if not writing and not locked (initial state) */}
+        {!isWritingActive && !locked && (
           <button
             onClick={() => {
               setText(""); // Clear local text state immediately
@@ -131,12 +117,14 @@ const WritingArea: React.FC<WritingAreaProps> = ({
             Start
           </button>
         )}
-        {isWritingActive && ( // Show timer when actively writing
+        {/* Show timer when actively writing */}
+        {isWritingActive && (
           <div className="px-6 py-2 bg-green-500 text-white font-semibold rounded-md">
             Time Left: {formatTime(timeLeft)}
           </div>
         )}
-        {locked && !isWritingActive && ( // Show "Time Up! 00:00" when locked after completion
+        {/* Show "Time Up! 00:00" when locked after completion (and not writing) */}
+        {locked && !isWritingActive && (
             <div className="px-6 py-2 bg-red-500 text-white font-semibold rounded-md">
                 Time Up! {formatTime(0)}
             </div>
@@ -145,15 +133,5 @@ const WritingArea: React.FC<WritingAreaProps> = ({
     </div>
   );
 };
-// A small helper to clarify the disabled logic in textarea
-// (This is a conceptual note, not actual code to add, the logic is embedded above)
-const viewMode = isWritingActive ? 'writing' : (locked ? 'completed' : 'initial');
-// textarea disabled={locked || (viewMode !== 'initial' && viewMode !== 'writing')}
-// textarea disabled={locked || !isWritingActive} // This was the previous one.
-// Let's simplify the textarea disabled logic for now:
-// disabled={locked || !isWritingActive}
-// This means if it's not locked, it's only enabled if isWritingActive is true.
-// If it's locked, it's always disabled. This should be fine.
-// The placeholder also changes based on `isWritingActive`.
 
 export default WritingArea;
