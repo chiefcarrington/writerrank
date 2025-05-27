@@ -125,7 +125,7 @@ export default function HomePage() {
           )}
         </div>
         <footer className="text-center mt-8 text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} Your App Name. Inspired by daily challenges.</p>
+          <p>&copy; {new Date().getFullYear()} Write Daily.</p>
         </footer>
       </main>
     </>
