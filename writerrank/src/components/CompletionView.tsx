@@ -4,7 +4,7 @@ import EmailForm from './EmailForm';
 
 interface CompletionViewProps {
   submission: string;
-  currentPrompt: string | null; // <<<<< ADD currentPrompt PROP
+  currentPrompt: string | null;
   onWriteAgain: () => void;
 }
 
@@ -18,9 +18,9 @@ const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentProm
       </div>
 
       <div className="my-8 border-t border-gray-200 pt-8">
-        {/* Pass prompt and submission to EmailForm */}
         <EmailForm
-          promptText={currentPrompt}
+          // VVVVVV MODIFIED HERE VVVVVV
+          promptText={currentPrompt === null ? undefined : currentPrompt}
           submissionText={submission}
         />
       </div>
