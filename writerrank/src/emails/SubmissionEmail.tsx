@@ -23,7 +23,7 @@ import {
     prompt,
     submissionText,
   }) => {
-    const previewText = `Here's a copy of your recent writing submission!`;
+    const previewText = `Here's a copy of your rcent writing seubmission!`;
   
     return (
       <Html>
@@ -38,7 +38,7 @@ import {
             <Heading style={heading}>Your Writing Submission 🖋️</Heading>
             <Text style={paragraph}>Hello {userEmail.split('@')[0]},</Text>
             <Text style={paragraph}>
-              Thank you for writing with WriterRank! Here’s a copy of your response to the daily prompt:
+              Thank you for writing with Open Write! Here’s a copy of your response to the daily prompt:
             </Text>
             <Section style={sectionBox}>
               <Heading as="h2" style={subHeading}>
@@ -54,7 +54,7 @@ import {
             </Section>
             <Hr style={hr} />
             <Text style={footer}>
-              WriterRank - Keep writing, keep growing!
+              Open Write - Keep writing, keep growing!
               <br />
               {/* You can add your app's URL here */}
             </Text>
