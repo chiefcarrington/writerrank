@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const emailHtml: string = await render(emailElement); // <<<<< MODIFIED HERE
 
     const { data, error } = await resend.emails.send({
-      from: 'WriterRank <noreply@yourverifieddomain.com>', // REPLACE with your verified sending domain
+      from: 'WriterRank <noreply@openwrite.app>', // REPLACE with your verified sending domain
       to: [userEmail],
       subject: "Here's a copy of your WriterRank Submission!",
       html: emailHtml, // Now emailHtml is a string, which Resend likely expects
