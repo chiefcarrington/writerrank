@@ -16,9 +16,8 @@ export default function EmailForm({ promptText, submissionText }: EmailFormProps
   const [emailSentMessage, setEmailSentMessage] = useState('');
 
 
-  const handleSendSubmissionEmail = async (registeredEmail: string) => {
-    if (!promptText || submissionText === undefined) { // submissionText can be empty string
-      // Not enough data to send submission email, or not in the right context
+  const handleSendSubmissionEmail = async (currentRegisteredEmail: string) => { // Renamed param to avoid conflict if any
+    if (!promptText || submissionText === undefined) {
       return;
     }
 
@@ -28,7 +27,7 @@ export default function EmailForm({ promptText, submissionText }: EmailFormProps
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userEmail: registeredEmail,
+          userEmail: currentRegisteredEmail,
           prompt: promptText,
           submissionText: submissionText,
         }),
@@ -61,7 +60,8 @@ export default function EmailForm({ promptText, submissionText }: EmailFormProps
       return;
     }
 
-    let registeredEmail = email.toLowerCase(); // Use the submitted email for sending
+    // VVVVVV MODIFIED HERE: let -> const VVVVVV
+    const registeredEmail = email.toLowerCase(); // Use the submitted email for sending
 
     try {
       const response = await fetch('/api/subscribe', {
@@ -75,13 +75,12 @@ export default function EmailForm({ promptText, submissionText }: EmailFormProps
       if (response.ok) {
         let successMsg = data.message || 'Thank you for subscribing!';
         if (response.status === 200 && data.message.includes('already registered')) {
-          successMsg = data.message; // Use the specific "already registered" message
+          successMsg = data.message;
         }
         setMessage(successMsg);
         setIsError(false);
-        setEmail(''); // Clear input
+        setEmail('');
 
-        // If prompt and submission text are available, try to send the email
         if (promptText && submissionText !== undefined) {
           await handleSendSubmissionEmail(registeredEmail);
         }

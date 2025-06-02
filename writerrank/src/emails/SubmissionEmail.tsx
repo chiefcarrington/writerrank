@@ -9,7 +9,6 @@ import {
     Preview,
     Section,
     Text,
-     Tailwind, // If you want to use Tailwind CSS
   } from '@react-email/components';
   import * as React from 'react';
   
