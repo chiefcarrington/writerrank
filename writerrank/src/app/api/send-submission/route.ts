@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     );
 
     const { data, error } = await resend.emails.send({
-      from: 'WriterRank <noreply@yourverifieddomain.com>', // REPLACE with your verified sending domain on Resend
+      from: 'WriterRank <noreply@openwrite.app>', // REPLACE with your verified sending domain on Resend
       to: [userEmail],
       subject: "Here's a copy of your WriterRank Submission!",
       html: emailHtml,
