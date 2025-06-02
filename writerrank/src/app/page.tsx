@@ -7,7 +7,6 @@ import { getPromptOfTheDay } from '../lib/dailyPrompt';
 import PromptDisplay from '../components/PromptDisplay';
 import WritingArea from '../components/WritingArea';
 import CompletionView from '../components/CompletionView';
-// import EmailForm from '../components/EmailForm'; // <<<<< REMOVE THIS IMPORT
 
 type ViewMode = 'initial' | 'writing' | 'completed';
 
@@ -72,6 +71,7 @@ export default function HomePage() {
       <Head>
         <title>WriterRank - Daily Quick Write</title>
         <meta name="description" content="Your daily 3-minute writing challenge. Join the waitlist!" />
+        {/* <link rel="icon" href="/favicon.ico" /> Ensure your favicon is in public folder */}
       </Head>
 
       <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-slate-100 to-sky-100">
@@ -88,17 +88,14 @@ export default function HomePage() {
           {viewMode !== 'completed' && <PromptDisplay prompt={currentPrompt} />}
 
           {viewMode === 'initial' && currentPrompt && (
-            <>
-              <WritingArea
-                isWritingActive={false}
-                onStartWriting={handleStartWriting}
-                onTimeUp={() => {}}
-                onTextChange={() => {}}
-                locked={false}
-                initialText=""
-              />
-              {/* <EmailForm /> <<<<< REMOVE THIS USAGE */}
-            </>
+            <WritingArea
+              isWritingActive={false}
+              onStartWriting={handleStartWriting}
+              onTimeUp={() => {}}
+              onTextChange={() => {}}
+              locked={false}
+              initialText=""
+            />
           )}
 
           {viewMode === 'writing' && currentPrompt && (
@@ -115,8 +112,11 @@ export default function HomePage() {
           {viewMode === 'completed' && (
             <>
               <PromptDisplay prompt={currentPrompt} />
-              <CompletionView submission={submission} onWriteAgain={handleWriteAgain} />
-              {/* <EmailForm /> <<<<< REMOVE THIS USAGE (it's now inside CompletionView) */}
+              <CompletionView
+                submission={submission}
+                currentPrompt={currentPrompt} // Pass currentPrompt here
+                onWriteAgain={handleWriteAgain}
+              />
             </>
           )}
         </div>
