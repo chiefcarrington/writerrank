@@ -1,14 +1,14 @@
 // src/app/api/send-submission/route.ts
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import SubmissionEmail from '@/emails/SubmissionEmail'; // Adjust path if your emails folder is elsewhere
-import { render } from '@react-email/render'; // To render React component to HTML string
+import * as React from 'react';
+import SubmissionEmail from '@/emails/SubmissionEmail';
+import { render } from '@react-email/render'; // This is the import we are focusing on
 
 const resendApiKey = process.env.RESEND_API_KEY;
 
 if (!resendApiKey) {
   console.error("CRITICAL: Resend API Key is not defined in environment variables.");
-  // throw new Error("Resend API Key is not configured."); // Or handle gracefully
 }
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -16,13 +16,14 @@ const resend = resendApiKey ? new Resend(resendApiKey) : null;
 export async function POST(request: Request) {
   if (!resend) {
     return NextResponse.json(
-      { error: 'Email client not initialized due to server configuration error.' },
+      { error: 'Email client not initialized. Server configuration error: Resend API Key missing.' },
       { status: 500 }
     );
   }
 
   try {
-    const { userEmail, prompt, submissionText } = await request.json();
+    const body = await request.json();
+    const { userEmail, prompt, submissionText } = body;
 
     if (!userEmail || typeof userEmail !== 'string' || !userEmail.includes('@')) {
       return NextResponse.json({ error: 'A valid recipient email is required.' }, { status: 400 });
@@ -30,36 +31,43 @@ export async function POST(request: Request) {
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Prompt text is required.' }, { status: 400 });
     }
-    if (typeof submissionText !== 'string') { // Allow empty submissionText
-      return NextResponse.json({ error: 'Submission text is required.' }, { status: 400 });
+    if (typeof submissionText !== 'string') {
+      return NextResponse.json({ error: 'Submission text must be a string.' }, { status: 400 });
     }
 
-    // Render the React Email component to an HTML string
-    const emailHtml = render(
-      <SubmissionEmail
-        userEmail={userEmail}
-        prompt={prompt}
-        submissionText={submissionText}
-      />
-    );
+    const emailProps = {
+      userEmail: userEmail,
+      prompt: prompt,
+      submissionText: submissionText,
+    };
+
+    const emailElement: React.ReactElement = React.createElement(SubmissionEmail, emailProps);
+    
+    // If TypeScript thinks render() returns Promise<string>, we need to await it.
+    // If render() is truly synchronous, await on its result (a string) will resolve immediately.
+    // This addresses TypeScript's current understanding of render()'s return type.
+    const emailHtml: string = await render(emailElement); // <<<<< MODIFIED HERE
 
     const { data, error } = await resend.emails.send({
-      from: 'WriterRank <noreply@openwrite.app>', // REPLACE with your verified sending domain on Resend
+      from: 'WriterRank <noreply@yourverifieddomain.com>', // REPLACE with your verified sending domain
       to: [userEmail],
       subject: "Here's a copy of your WriterRank Submission!",
-      html: emailHtml,
+      html: emailHtml, // Now emailHtml is a string, which Resend likely expects
     });
 
     if (error) {
       console.error('Resend API error:', error);
-      return NextResponse.json({ error: 'Failed to send email.', details: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to send email.', details: error.message || 'Unknown Resend error' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Submission email sent successfully!', resendId: data?.id }, { status: 200 });
 
   } catch (err: unknown) {
     let errorMessage = 'An unexpected error occurred on the server.';
-    if (err instanceof Error) {
+    if (err instanceof SyntaxError && err.message.includes("JSON.parse")) {
+        errorMessage = "Invalid JSON in request body.";
+        return NextResponse.json({ error: errorMessage }, { status: 400 });
+    } else if (err instanceof Error) {
       errorMessage = err.message;
     }
     console.error('API Route /api/send-submission general error:', err);
