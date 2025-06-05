@@ -27,22 +27,18 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Ref to hold the latest text for onTimeUp, avoiding `text` as a direct dependency for the timer effect.
   const currentTextRef = useRef(text);
   useEffect(() => {
     currentTextRef.current = text;
   }, [text]);
 
-  // Effect to handle starting/stopping the timer and resetting timeLeft
   useEffect(() => {
     if (isWritingActive) {
-      // Reset timer and focus when writing becomes active
       setTimeLeft(WRITING_DURATION_SECONDS);
       if (textAreaRef.current) {
         textAreaRef.current.focus();
       }
 
-      // Clear any existing interval before starting a new one
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
@@ -50,23 +46,21 @@ const WritingArea: React.FC<WritingAreaProps> = ({
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
-            if (timerIntervalRef.current) { // Ensure it exists before clearing
+            if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current);
             }
-            onTimeUp(currentTextRef.current); // Use the ref to get the latest text
+            onTimeUp(currentTextRef.current);
             return 0;
           }
           return prevTime - 1;
         });
       }, 1000);
     } else {
-      // If writing is not active, ensure the timer is cleared
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
     }
 
-    // Cleanup function: clears interval when component unmounts or `isWritingActive` changes before effect re-runs.
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
@@ -74,7 +68,6 @@ const WritingArea: React.FC<WritingAreaProps> = ({
     };
   }, [isWritingActive, onTimeUp]);
 
-  // Effect to propagate text changes to the parent
   useEffect(() => {
     onTextChange(text);
   }, [text, onTextChange]);
@@ -92,6 +85,13 @@ const WritingArea: React.FC<WritingAreaProps> = ({
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
   };
 
+  const handleManualSubmit = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    onTimeUp(currentTextRef.current);
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <textarea
@@ -105,25 +105,35 @@ const WritingArea: React.FC<WritingAreaProps> = ({
       />
 
       <div className="mt-4 flex justify-end items-center">
-        {/* Show Start button only if not writing and not locked (initial state) */}
         {!isWritingActive && !locked && (
           <button
             onClick={() => {
-              setText(""); // Clear local text state immediately
-              onStartWriting(); // Notify parent to change mode and handle other logic
+              setText("");
+              onStartWriting();
             }}
             className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             Start
           </button>
         )}
-        {/* Show timer when actively writing */}
+
+        {/* VVVVVV MODIFIED HERE: Added Submit button and flex container VVVVVV */}
         {isWritingActive && (
-          <div className="px-6 py-2 bg-green-500 text-white font-semibold rounded-md">
-            Time Left: {formatTime(timeLeft)}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleManualSubmit}
+              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              title="Finish and submit your writing early"
+            >
+              Submit
+            </button>
+            <div className="px-6 py-2 bg-green-500 text-white font-semibold rounded-md">
+              Time Left: {formatTime(timeLeft)}
+            </div>
           </div>
         )}
-        {/* Show "Time Up! 00:00" when locked after completion (and not writing) */}
+        {/* ^^^^^ END OF MODIFICATION ^^^^^ */}
+
         {locked && !isWritingActive && (
             <div className="px-6 py-2 bg-red-500 text-white font-semibold rounded-md">
                 Time Up! {formatTime(0)}
