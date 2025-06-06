@@ -69,7 +69,7 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>WriterRank - Daily Quick Write</title>
+        <title>OpenWrite</title>
         <meta name="description" content="Your daily 3-minute writing challenge. Join the waitlist!" />
         {/* <link rel="icon" href="/favicon.ico" /> Ensure your favicon is in public folder */}
       </Head>
@@ -78,7 +78,7 @@ export default function HomePage() {
         <div className="w-full max-w-3xl bg-white p-6 sm:p-8 rounded-xl shadow-2xl mb-8">
           <header className="text-center mb-6 sm:mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
-              WriterRank 🖋️
+              OpenWrite 🖋️
             </h1>
             <p className="text-gray-500 mt-2 text-sm sm:text-base">
               One prompt. Three minutes. No second chances.
