@@ -13,7 +13,7 @@ export default function LoginPage() {
         </Link>
         <p className="text-gray-500 mt-2">Your daily writing challenge.</p>
       </header>
-      <AuthForm />
+      <AuthForm/>
     </main>
   );
 }
