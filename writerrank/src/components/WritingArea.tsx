@@ -1,12 +1,13 @@
 // src/components/WritingArea.tsx
-"use client";
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 
+// The onTimeUp function will now also pass the anonymity setting
 interface WritingAreaProps {
   isWritingActive: boolean;
   onStartWriting: () => void;
-  onTimeUp: (finalText: string) => void;
+  onTimeUp: (finalText: string, isAnonymous: boolean) => void;
   initialText?: string;
   onTextChange: (text: string) => void;
   locked: boolean;
@@ -24,6 +25,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
 }) => {
   const [text, setText] = useState(initialText);
   const [timeLeft, setTimeLeft] = useState(WRITING_DURATION_SECONDS);
+  const [isAnonymous, setIsAnonymous] = useState(false); // State for the checkbox
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -38,40 +40,29 @@ const WritingArea: React.FC<WritingAreaProps> = ({
       if (textAreaRef.current) {
         textAreaRef.current.focus();
       }
-
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
-            if (timerIntervalRef.current) {
-                clearInterval(timerIntervalRef.current);
-            }
-            onTimeUp(currentTextRef.current);
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            onTimeUp(currentTextRef.current, isAnonymous); // Pass anonymity state
             return 0;
           }
           return prevTime - 1;
         });
       }, 1000);
     } else {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     }
-
     return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  }, [isWritingActive, onTimeUp]);
+  }, [isWritingActive, onTimeUp, isAnonymous]); // Added isAnonymous to dependency array
 
   useEffect(() => {
     onTextChange(text);
   }, [text, onTextChange]);
-
 
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!locked && isWritingActive) {
@@ -89,7 +80,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
     }
-    onTimeUp(currentTextRef.current);
+    onTimeUp(currentTextRef.current, isAnonymous); // Pass anonymity state
   };
 
   return (
@@ -103,42 +94,59 @@ const WritingArea: React.FC<WritingAreaProps> = ({
         className="w-full h-64 p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 resize-none text-base"
         aria-label="Writing input"
       />
+      
+      {/* Container for bottom controls */}
+      <div className="mt-4 flex justify-between items-center">
+        {/* Checkbox appears only when writing is active */}
+        <div className="flex-grow">
+            {isWritingActive && (
+                <label htmlFor="anonymous-checkbox" className="flex items-center text-sm text-gray-600 cursor-pointer">
+                    <input
+                        id="anonymous-checkbox"
+                        type="checkbox"
+                        checked={isAnonymous}
+                        onChange={(e) => setIsAnonymous(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="ml-2">Post anonymously</span>
+                </label>
+            )}
+        </div>
 
-      <div className="mt-4 flex justify-end items-center">
-        {!isWritingActive && !locked && (
-          <button
-            onClick={() => {
-              setText("");
-              onStartWriting();
-            }}
-            className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Start
-          </button>
-        )}
-
-        {/* VVVVVV MODIFIED HERE: Added Submit button and flex container VVVVVV */}
-        {isWritingActive && (
-          <div className="flex items-center gap-4">
+        {/* Buttons on the right */}
+        <div className="flex items-center gap-4">
+            {!isWritingActive && !locked && (
             <button
-              onClick={handleManualSubmit}
-              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-              title="Finish and submit your writing early"
+                onClick={() => {
+                setText("");
+                onStartWriting();
+                }}
+                className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700"
             >
-              Submit
+                Start
             </button>
-            <div className="px-6 py-2 bg-green-500 text-white font-semibold rounded-md">
-              Time Left: {formatTime(timeLeft)}
-            </div>
-          </div>
-        )}
-        {/* ^^^^^ END OF MODIFICATION ^^^^^ */}
+            )}
 
-        {locked && !isWritingActive && (
-            <div className="px-6 py-2 bg-red-500 text-white font-semibold rounded-md">
-                Time Up! {formatTime(0)}
-            </div>
-        )}
+            {isWritingActive && (
+            <>
+                <button
+                onClick={handleManualSubmit}
+                className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
+                >
+                Submit
+                </button>
+                <div className="px-6 py-2 bg-green-500 text-white font-semibold rounded-md">
+                Time Left: {formatTime(timeLeft)}
+                </div>
+            </>
+            )}
+            
+            {locked && !isWritingActive && (
+                <div className="px-6 py-2 bg-red-500 text-white font-semibold rounded-md">
+                    Time Up! {formatTime(0)}
+                </div>
+            )}
+        </div>
       </div>
     </div>
   );

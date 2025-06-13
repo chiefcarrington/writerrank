@@ -3,14 +3,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
-// We no longer need the local getPromptOfTheDay function
-// import { getPromptOfTheDay } from '../lib/dailyPrompt'; 
+import Link from 'next/link';
 import PromptDisplay from '../components/PromptDisplay';
 import WritingArea from '../components/WritingArea';
 import CompletionView from '../components/CompletionView';
-import AuthProvider, { useAuth } from '@/components/auth-provider'; // Import useAuth
+import { useAuth } from '@/components/auth-provider';
 
-// Define a type for our prompt object
 type Prompt = {
   id: number;
   prompt_text: string;
@@ -19,24 +17,49 @@ type Prompt = {
 type ViewMode = 'initial' | 'writing' | 'completed';
 
 export default function HomePage() {
-  const { user } = useAuth(); // Get user session info
+  const { user } = useAuth();
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('initial');
   const [submission, setSubmission] = useState<string>("");
   const [isLoadingPrompt, setIsLoadingPrompt] = useState(true);
 
-  // This will now handle checking for saved submissions in localStorage
-  // The prompt fetching will be done in a separate effect
+  // This will handle the API call to save the submission
+  const handleSaveSubmission = async (finalText: string, isAnonymous: boolean) => {
+    if (!user) {
+      console.log("No user, cannot save submission to DB.");
+      return; // Can't save if user isn't logged in
+    }
+    if (!currentPrompt) {
+      console.error("No current prompt, cannot save submission.");
+      return;
+    }
+
+    try {
+      await fetch('/api/save-submission', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          promptId: currentPrompt.id,
+          submissionText: finalText,
+          isAnonymous: isAnonymous,
+        }),
+      });
+      // Optionally handle success/error notification
+    } catch (error) {
+      console.error("Failed to save submission:", error);
+    }
+  };
+
+
   const setupDailyChallengeState = useCallback(() => {
     if (!currentPrompt) return;
-
-    const today = new Date().toDateString(); // Used as part of the key for localStorage
+    const today = new Date().toDateString();
     const storageKey = `submission_${today}_${currentPrompt.id}`;
     const completedKey = `completed_${today}_${currentPrompt.id}`;
-
     const savedSubmission = localStorage.getItem(storageKey);
     const alreadyCompleted = localStorage.getItem(completedKey);
-
     if (alreadyCompleted && savedSubmission) {
       setSubmission(savedSubmission);
       setViewMode('completed');
@@ -46,29 +69,24 @@ export default function HomePage() {
     }
   }, [currentPrompt]);
 
-  // Effect to fetch the prompt from our API when the component loads
   useEffect(() => {
     const fetchPrompt = async () => {
       setIsLoadingPrompt(true);
       try {
         const response = await fetch('/api/get-prompt');
-        if (!response.ok) {
-          throw new Error('Failed to fetch prompt');
-        }
+        if (!response.ok) throw new Error('Failed to fetch prompt');
         const promptData: Prompt = await response.json();
         setCurrentPrompt(promptData);
       } catch (error) {
         console.error(error);
-        setCurrentPrompt(null); // Set to null if there's an error
+        setCurrentPrompt(null);
       } finally {
         setIsLoadingPrompt(false);
       }
     };
-
     fetchPrompt();
   }, []);
 
-  // Effect to set up the daily challenge state once the prompt has been fetched
   useEffect(() => {
     if (currentPrompt) {
       setupDailyChallengeState();
@@ -77,6 +95,11 @@ export default function HomePage() {
 
 
   const handleStartWriting = () => {
+    if (!user) {
+        // If user is not logged in, redirect them to the login page
+        window.location.href = '/login';
+        return;
+    }
     setSubmission("");
     setViewMode('writing');
   };
@@ -87,23 +110,22 @@ export default function HomePage() {
     }
   }, [viewMode]);
 
-  const handleTimeUp = useCallback((finalText: string) => {
-    if (!currentPrompt) return; // Should not happen, but a good check
+  // This function is passed to WritingArea and called on submit/time up
+  const handleTimeUp = useCallback(async (finalText: string, isAnonymous: boolean) => {
+    if (!currentPrompt) return;
 
     setSubmission(finalText);
     setViewMode('completed');
-
+    
+    // Save to localStorage to remember completion status for the day
     const today = new Date().toDateString();
-    const storageKey = `submission_${today}_${currentPrompt.id}`;
-    const completedKey = `completed_${today}_${currentPrompt.id}`;
-    
-    // We still save to localStorage to remember completion status for the day
-    localStorage.setItem(storageKey, finalText);
-    localStorage.setItem(completedKey, 'true');
+    localStorage.setItem(`submission_${today}_${currentPrompt.id}`, finalText);
+    localStorage.setItem(`completed_${today}_${currentPrompt.id}`, 'true');
 
-    // We will add the call to save to DB in the next step
+    // Call the function to save to the database
+    await handleSaveSubmission(finalText, isAnonymous);
     
-  }, [currentPrompt]);
+  }, [currentPrompt, handleSaveSubmission]);
 
   const handleWriteAgain = () => {
     setupDailyChallengeState();
@@ -117,15 +139,18 @@ export default function HomePage() {
         <meta name="description" content="Your daily 3-minute writing challenge." />
       </Head>
 
-      <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-slate-100 to-sky-100">
+      <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-100 to-sky-100">
         <div className="w-full max-w-3xl bg-white p-6 sm:p-8 rounded-xl shadow-2xl mb-8">
           <header className="text-center mb-6 sm:mb-8">
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600">
-              OpenWrite 🖋️
-            </h1>
-            <p className="text-gray-500 mt-2 text-sm sm:text-base">
+            <Link href="/" passHref>
+                <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 cursor-pointer">
+                    OpenWrite 🖋️
+                </h1>
+            </Link>
+            <p className="text-gray-500 mt-2">
               One prompt. Three minutes. No second chances.
             </p>
+            {!user && <p className="mt-2 text-sm">Please <Link href="/login" className="text-indigo-600 hover:underline">sign in</Link> to write.</p>}
           </header>
 
           {isLoadingPrompt ? (
@@ -140,7 +165,7 @@ export default function HomePage() {
                 <WritingArea
                   isWritingActive={false}
                   onStartWriting={handleStartWriting}
-                  onTimeUp={() => {}}
+                  onTimeUp={handleTimeUp}
                   onTextChange={() => {}}
                   locked={false}
                   initialText=""
@@ -150,7 +175,7 @@ export default function HomePage() {
               {viewMode === 'writing' && (
                 <WritingArea
                   isWritingActive={true}
-                  onStartWriting={() => {}}
+                  onStartWriting={handleStartWriting}
                   onTimeUp={handleTimeUp}
                   onTextChange={handleTextChange}
                   initialText={submission}
