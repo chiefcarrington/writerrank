@@ -4,6 +4,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
+import { useRouter, usePathname } from 'next/navigation'; // Import router and pathname hooks
 
 // Define a type for our public profile data
 export type Profile = {
@@ -26,9 +27,11 @@ const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
+  const router = useRouter();
+  const pathname = usePathname();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null); // State for profile
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -36,34 +39,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
-      
-      // If there's a user, fetch their profile
       if (session?.user) {
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+        const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         setProfile(userProfile as Profile | null);
       }
       setIsLoading(false);
     };
-
     getInitialSession();
 
-    // Listen for changes in authentication state
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // If the user logs in, fetch their profile. If they log out, clear it.
         if (session?.user) {
-          const { data: userProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
           setProfile(userProfile as Profile | null);
         } else {
           setProfile(null);
@@ -71,20 +60,27 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         setIsLoading(false);
       }
     );
-
-    // Cleanup the listener when the component unmounts
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, [supabase]);
 
-  const value = {
-    supabase,
-    session,
-    user,
-    profile, // Provide the profile
-    isLoading,
-  };
+
+  // VVVVVV NEW LOGIC TO REDIRECT USERS VVVVVV
+  useEffect(() => {
+    // If loading is finished and we have a user, but they don't have a username
+    if (!isLoading && user && profile && !profile.username) {
+      // And they are not already on the onboarding page
+      if (pathname !== '/onboarding') {
+        // Redirect them to the onboarding page
+        router.push('/onboarding');
+      }
+    }
+  }, [user, profile, isLoading, pathname, router]);
+  // ^^^^^ END OF NEW LOGIC ^^^^^
+
+
+  const value = { supabase, session, user, profile, isLoading };
 
   return (
     <SupabaseContext.Provider value={value}>
