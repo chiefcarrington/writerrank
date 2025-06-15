@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import * as React from 'react'; // Ensure React is imported
 import SubmissionEmail from '@/emails/SubmissionEmail';
 import { render } from '@react-email/render';
 import { Ratelimit } from '@upstash/ratelimit';
@@ -43,26 +44,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 });
     }
 
-    // --- Step 1: Subscribe the user (or confirm they already exist) ---
+    // Step 1: Subscribe the user (or confirm they already exist)
     const { error: subscribeError } = await supabase
       .from('registered_users')
-      .insert([{ email: email.toLowerCase() }], { onConflict: 'email' }); // onConflict ignores if email already exists
+      .insert([{ email: email.toLowerCase() }], { onConflict: 'email' });
 
-    // We only want to stop if it's a real error, not a duplicate email conflict
-    if (subscribeError && subscribeError.code !== '23505') { // 23505 is the code for unique constraint violation
+    if (subscribeError && subscribeError.code !== '23505') {
       console.error('Supabase subscribe error:', subscribeError);
       return NextResponse.json({ error: 'Could not subscribe email.' }, { status: 500 });
     }
 
-    // --- Step 2: Send the submission copy email ---
+    // Step 2: Send the submission copy email
     if (promptText && submissionText !== undefined) {
-      const emailHtml = render(
-        <SubmissionEmail
-          userEmail={email}
-          prompt={promptText}
-          submissionText={submissionText}
-        />
-      );
+      
+      // VVVVVV MODIFIED BLOCK HERE VVVVVV
+      // Create the React element using React.createElement to avoid JSX parsing issues
+      const emailElement = React.createElement(SubmissionEmail, {
+        userEmail: email,
+        prompt: promptText,
+        submissionText: submissionText,
+      });
+
+      // Render the element to an HTML string
+      const emailHtml = render(emailElement);
+      // ^^^^^ END OF MODIFICATION ^^^^^
 
       await resend.emails.send({
         from: 'OpenWrite <noreply@yourverifieddomain.com>', // REPLACE with your verified domain
