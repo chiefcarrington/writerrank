@@ -24,7 +24,6 @@ type SupabaseContextType = {
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Use useState to create a stable, single instance of the Supabase client
   const [supabase] = useState(() => createClient());
   const router = useRouter();
   const pathname = usePathname();
@@ -35,67 +34,77 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This listener handles all auth events: initial load, login, logout, etc.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       try {
-        setIsLoading(true); // Set loading true at the start of any auth change
+        setIsLoading(true);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // If a user is logged in, fetch their profile
+          // VVVVVV MODIFIED BLOCK HERE VVVVVV
+          // Fetch the profile, but don't assume it exists immediately.
+          // Use .maybeSingle() which returns one row or null, without throwing an error if it's missing.
           const { data: userProfile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle(); // Use maybeSingle() instead of single()
+          // ^^^^^ END OF MODIFICATION ^^^^^
 
           if (error) {
-            // This can happen if the profile hasn't been created yet by the trigger
-            console.warn('Could not fetch user profile:', error.message);
+            console.error('Error fetching profile:', error.message);
             setProfile(null);
           } else {
             setProfile(userProfile as Profile | null);
           }
         } else {
-          // If user is logged out, clear the profile
           setProfile(null);
         }
       } catch (error) {
-        console.error("Error in onAuthStateChange handler:", error);
+        console.error("A critical error occurred in onAuthStateChange handler:", error);
       } finally {
-        // Always set loading to false after processing is done
         setIsLoading(false);
       }
     });
 
-    // Cleanup the listener when the component unmounts
     return () => {
       subscription.unsubscribe();
     };
   }, [supabase]);
 
-
-  // The redirect logic effect remains the same
   useEffect(() => {
+    if (!isLoading && user && !profile) {
+      // This case handles when the user is logged in, but their profile hasn't appeared yet.
+      // We can add a small delay and refetch to give the trigger time to run.
+      const retryTimeout = setTimeout(async () => {
+        if (user) { // Check for user again inside timeout
+          const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+          setProfile(userProfile);
+        }
+      }, 1000); // Wait 1 second and try again
+
+      return () => clearTimeout(retryTimeout);
+    }
+
     if (!isLoading && user && profile && !profile.username) {
       if (pathname !== '/onboarding') {
         router.push('/onboarding');
       }
     }
-  }, [user, profile, isLoading, pathname, router]);
+  }, [user, profile, isLoading, pathname, router, supabase]);
 
   const value = { supabase, session, user, profile, isLoading };
 
   return (
     <SupabaseContext.Provider value={value}>
-      {/* Show a simple loading state to prevent screen flashing */}
-      {isLoading ? <div className="h-screen w-full" /> : children}
+      {isLoading 
+        ? <div className="h-screen w-full flex items-center justify-center"><p className="text-gray-500">Loading Session...</p></div> 
+        : children
+      }
     </SupabaseContext.Provider>
   );
 }
 
-// Custom hook remains the same
 export const useAuth = () => {
   const context = useContext(SupabaseContext);
   if (context === undefined) {
