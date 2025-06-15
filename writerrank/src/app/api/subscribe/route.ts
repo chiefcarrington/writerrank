@@ -42,31 +42,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 });
     }
 
-    // --- Step 1: Subscribe the user using upsert ---
-    // VVVVVV MODIFIED BLOCK HERE VVVVVV
+    // Step 1: Subscribe the user using upsert
     const { error: subscribeError } = await supabase
       .from('registered_users')
       .upsert(
         { email: email.toLowerCase() },
-        { onConflict: 'email' } // Specify the column to check for conflicts
+        { onConflict: 'email' }
       );
-    // ^^^^^ END OF MODIFICATION ^^^^^
 
     if (subscribeError) {
-      // With upsert, a unique conflict is not an error, so we only check for other errors.
       console.error('Supabase subscribe error:', subscribeError);
       return NextResponse.json({ error: 'Could not subscribe email due to a database error.' }, { status: 500 });
     }
 
-    // --- Step 2: Send the submission copy email ---
+    // Step 2: Send the submission copy email
     if (promptText && submissionText !== undefined) {
+      
       const emailElement = React.createElement(SubmissionEmail, {
         userEmail: email,
         prompt: promptText,
         submissionText: submissionText,
       });
 
-      const emailHtml = render(emailElement);
+      // VVVVVV THE FIX IS HERE VVVVVV
+      // Await the render function to get the string, as required by your environment's types
+      const emailHtml = await render(emailElement);
+      // ^^^^^ END OF FIX ^^^^^
 
       await resend.emails.send({
         from: 'OpenWrite <noreply@yourverifieddomain.com>', // REPLACE with your verified domain
