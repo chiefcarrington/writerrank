@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import * as React from 'react'; // Ensure React is imported
+import * as React from 'react';
 import SubmissionEmail from '@/emails/SubmissionEmail';
 import { render } from '@react-email/render';
 import { Ratelimit } from '@upstash/ratelimit';
@@ -21,7 +21,6 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-// Create a rate limiter that allows 5 requests per minute from any IP address
 const ratelimit = new Ratelimit({
   redis: redis,
   limiter: Ratelimit.slidingWindow(5, '1 m'),
@@ -29,7 +28,6 @@ const ratelimit = new Ratelimit({
 });
 
 export async function POST(request: Request) {
-  // First, apply the rate limiter
   const ip = headers().get('x-forwarded-for') ?? '127.0.0.1';
   const { success } = await ratelimit.limit(ip);
 
@@ -44,30 +42,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 });
     }
 
-    // Step 1: Subscribe the user (or confirm they already exist)
+    // --- Step 1: Subscribe the user using upsert ---
+    // VVVVVV MODIFIED BLOCK HERE VVVVVV
     const { error: subscribeError } = await supabase
       .from('registered_users')
-      .insert([{ email: email.toLowerCase() }], { onConflict: 'email' });
+      .upsert(
+        { email: email.toLowerCase() },
+        { onConflict: 'email' } // Specify the column to check for conflicts
+      );
+    // ^^^^^ END OF MODIFICATION ^^^^^
 
-    if (subscribeError && subscribeError.code !== '23505') {
+    if (subscribeError) {
+      // With upsert, a unique conflict is not an error, so we only check for other errors.
       console.error('Supabase subscribe error:', subscribeError);
-      return NextResponse.json({ error: 'Could not subscribe email.' }, { status: 500 });
+      return NextResponse.json({ error: 'Could not subscribe email due to a database error.' }, { status: 500 });
     }
 
-    // Step 2: Send the submission copy email
+    // --- Step 2: Send the submission copy email ---
     if (promptText && submissionText !== undefined) {
-      
-      // VVVVVV MODIFIED BLOCK HERE VVVVVV
-      // Create the React element using React.createElement to avoid JSX parsing issues
       const emailElement = React.createElement(SubmissionEmail, {
         userEmail: email,
         prompt: promptText,
         submissionText: submissionText,
       });
 
-      // Render the element to an HTML string
       const emailHtml = render(emailElement);
-      // ^^^^^ END OF MODIFICATION ^^^^^
 
       await resend.emails.send({
         from: 'OpenWrite <noreply@yourverifieddomain.com>', // REPLACE with your verified domain
