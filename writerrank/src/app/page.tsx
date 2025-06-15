@@ -8,6 +8,7 @@ import PromptDisplay from '../components/PromptDisplay';
 import WritingArea from '../components/WritingArea';
 import CompletionView from '../components/CompletionView';
 import { useAuth } from '@/components/auth-provider';
+import AuthButton from '@/components/AuthButton'; // <<<<< IMPORT THE NEW COMPONENT
 
 type Prompt = {
   id: number;
@@ -17,20 +18,18 @@ type Prompt = {
 type ViewMode = 'initial' | 'writing' | 'completed';
 
 export default function HomePage() {
-  const { user } = useAuth(); // We get the user session, which can be null for guests
+  const { user, isLoading: isAuthLoading } = useAuth(); // Also get loading state
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('initial');
   const [submission, setSubmission] = useState<string>("");
   const [isLoadingPrompt, setIsLoadingPrompt] = useState(true);
 
-  // This function now ONLY saves to the database if a user is logged in
+  // ... (handleSaveSubmissionToDb, setupDailyChallengeState, fetchPrompt effects remain the same)
   const handleSaveSubmissionToDb = async (finalText: string, isAnonymous: boolean) => {
     if (!user || !currentPrompt) {
-      // If there is no logged-in user or no prompt, we don't save to the database.
       console.log("Guest submission or missing data. Not saving to DB.");
       return;
     }
-
     try {
       const response = await fetch('/api/save-submission', {
         method: 'POST',
@@ -59,7 +58,6 @@ export default function HomePage() {
     const completedKey = `completed_${today}_${currentPrompt.id}`;
     const savedSubmission = localStorage.getItem(storageKey);
     const alreadyCompleted = localStorage.getItem(completedKey);
-
     if (alreadyCompleted && savedSubmission) {
       setSubmission(savedSubmission);
       setViewMode('completed');
@@ -93,7 +91,6 @@ export default function HomePage() {
     }
   }, [currentPrompt, setupDailyChallengeState]);
 
-  // handleStartWriting NO LONGER checks for a user. Anyone can write.
   const handleStartWriting = () => {
     setSubmission("");
     setViewMode('writing');
@@ -101,27 +98,21 @@ export default function HomePage() {
 
   const handleTextChange = useCallback((text: string) => {
     if (viewMode === 'writing') {
-      setSubmission(text);
+        setSubmission(text);
     }
   }, [viewMode]);
 
-  // This function is passed to WritingArea and called on submit/time up
   const handleTimeUp = useCallback(async (finalText: string, isAnonymous: boolean) => {
     if (!currentPrompt) return;
-
     setSubmission(finalText);
     setViewMode('completed');
-
-    // Always save to localStorage so the user can see their work on the completion page
     const today = new Date().toDateString();
     localStorage.setItem(`submission_${today}_${currentPrompt.id}`, finalText);
     localStorage.setItem(`completed_${today}_${currentPrompt.id}`, 'true');
-
-    // Conditionally save to the database ONLY if the user is logged in
     if (user) {
       await handleSaveSubmissionToDb(finalText, isAnonymous);
     }
-  }, [currentPrompt, user]); // Added `user` to dependency array
+  }, [currentPrompt, user]);
 
   const handleWriteAgain = () => {
     setupDailyChallengeState();
@@ -145,16 +136,11 @@ export default function HomePage() {
             <p className="text-gray-500 mt-2">
               One prompt. Three minutes. No second chances.
             </p>
-            {/* The Login link is now more subtle and not a requirement */}
-            <div className="mt-2 text-sm">
-              {user ? (
-                <span>Welcome, {user.email?.split('@')[0]}!</span>
-              ) : (
-                <Link href="/login" className="text-indigo-600 hover:underline">
-                  Sign in
-                </Link>
-              )}
+            {/* VVVVVV MODIFIED HERE VVVVVV */}
+            <div className="mt-4 h-5"> {/* h-5 gives it a fixed height to prevent layout shift */}
+              {!isAuthLoading && <AuthButton />}
             </div>
+            {/* ^^^^^ END OF MODIFICATION ^^^^^ */}
           </header>
 
           {/* The rest of the page logic remains the same */}
@@ -165,7 +151,6 @@ export default function HomePage() {
           ) : (
             <>
               {viewMode !== 'completed' && <PromptDisplay prompt={currentPrompt.prompt_text} />}
-
               {viewMode === 'initial' && (
                 <WritingArea
                   isWritingActive={false}
@@ -176,18 +161,16 @@ export default function HomePage() {
                   initialText=""
                 />
               )}
-
               {viewMode === 'writing' && (
                 <WritingArea
                   isWritingActive={true}
-                  onStartWriting={() => {}} // Already started
+                  onStartWriting={() => {}}
                   onTimeUp={handleTimeUp}
                   onTextChange={handleTextChange}
                   initialText={submission}
                   locked={false}
                 />
               )}
-
               {viewMode === 'completed' && (
                 <>
                   <PromptDisplay prompt={currentPrompt.prompt_text} />
