@@ -17,41 +17,40 @@ type Prompt = {
 type ViewMode = 'initial' | 'writing' | 'completed';
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user } = useAuth(); // We get the user session, which can be null for guests
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('initial');
   const [submission, setSubmission] = useState<string>("");
   const [isLoadingPrompt, setIsLoadingPrompt] = useState(true);
 
-  // This will handle the API call to save the submission
-  const handleSaveSubmission = async (finalText: string, isAnonymous: boolean) => {
-    if (!user) {
-      console.log("No user, cannot save submission to DB.");
-      return; // Can't save if user isn't logged in
-    }
-    if (!currentPrompt) {
-      console.error("No current prompt, cannot save submission.");
+  // This function now ONLY saves to the database if a user is logged in
+  const handleSaveSubmissionToDb = async (finalText: string, isAnonymous: boolean) => {
+    if (!user || !currentPrompt) {
+      // If there is no logged-in user or no prompt, we don't save to the database.
+      console.log("Guest submission or missing data. Not saving to DB.");
       return;
     }
 
     try {
-      await fetch('/api/save-submission', {
+      const response = await fetch('/api/save-submission', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           promptId: currentPrompt.id,
           submissionText: finalText,
           isAnonymous: isAnonymous,
         }),
       });
-      // Optionally handle success/error notification
+      if (response.ok) {
+        console.log("Submission saved to database for user:", user.id);
+      } else {
+        const data = await response.json();
+        console.error("Failed to save submission:", data.error);
+      }
     } catch (error) {
-      console.error("Failed to save submission:", error);
+      console.error("API call to save submission failed:", error);
     }
   };
-
 
   const setupDailyChallengeState = useCallback(() => {
     if (!currentPrompt) return;
@@ -60,6 +59,7 @@ export default function HomePage() {
     const completedKey = `completed_${today}_${currentPrompt.id}`;
     const savedSubmission = localStorage.getItem(storageKey);
     const alreadyCompleted = localStorage.getItem(completedKey);
+
     if (alreadyCompleted && savedSubmission) {
       setSubmission(savedSubmission);
       setViewMode('completed');
@@ -93,20 +93,15 @@ export default function HomePage() {
     }
   }, [currentPrompt, setupDailyChallengeState]);
 
-
+  // handleStartWriting NO LONGER checks for a user. Anyone can write.
   const handleStartWriting = () => {
-    if (!user) {
-        // If user is not logged in, redirect them to the login page
-        window.location.href = '/login';
-        return;
-    }
     setSubmission("");
     setViewMode('writing');
   };
 
   const handleTextChange = useCallback((text: string) => {
     if (viewMode === 'writing') {
-        setSubmission(text);
+      setSubmission(text);
     }
   }, [viewMode]);
 
@@ -116,21 +111,21 @@ export default function HomePage() {
 
     setSubmission(finalText);
     setViewMode('completed');
-    
-    // Save to localStorage to remember completion status for the day
+
+    // Always save to localStorage so the user can see their work on the completion page
     const today = new Date().toDateString();
     localStorage.setItem(`submission_${today}_${currentPrompt.id}`, finalText);
     localStorage.setItem(`completed_${today}_${currentPrompt.id}`, 'true');
 
-    // Call the function to save to the database
-    await handleSaveSubmission(finalText, isAnonymous);
-    
-  }, [currentPrompt, handleSaveSubmission]);
+    // Conditionally save to the database ONLY if the user is logged in
+    if (user) {
+      await handleSaveSubmissionToDb(finalText, isAnonymous);
+    }
+  }, [currentPrompt, user]); // Added `user` to dependency array
 
   const handleWriteAgain = () => {
     setupDailyChallengeState();
   };
-
 
   return (
     <>
@@ -139,20 +134,30 @@ export default function HomePage() {
         <meta name="description" content="Your daily 3-minute writing challenge." />
       </Head>
 
-      <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-100 to-sky-100">
+      <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-slate-100 to-sky-100">
         <div className="w-full max-w-3xl bg-white p-6 sm:p-8 rounded-xl shadow-2xl mb-8">
           <header className="text-center mb-6 sm:mb-8">
             <Link href="/" passHref>
-                <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 cursor-pointer">
-                    OpenWrite 🖋️
-                </h1>
+              <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 cursor-pointer">
+                OpenWrite 🖋️
+              </h1>
             </Link>
             <p className="text-gray-500 mt-2">
               One prompt. Three minutes. No second chances.
             </p>
-            {!user && <p className="mt-2 text-sm">Please <Link href="/login" className="text-indigo-600 hover:underline">sign in</Link> to write.</p>}
+            {/* The Login link is now more subtle and not a requirement */}
+            <div className="mt-2 text-sm">
+              {user ? (
+                <span>Welcome, {user.email?.split('@')[0]}!</span>
+              ) : (
+                <Link href="/login" className="text-indigo-600 hover:underline">
+                  Sign in
+                </Link>
+              )}
+            </div>
           </header>
 
+          {/* The rest of the page logic remains the same */}
           {isLoadingPrompt ? (
             <div className="text-center p-8">Loading today's prompt...</div>
           ) : !currentPrompt ? (
@@ -175,7 +180,7 @@ export default function HomePage() {
               {viewMode === 'writing' && (
                 <WritingArea
                   isWritingActive={true}
-                  onStartWriting={handleStartWriting}
+                  onStartWriting={() => {}} // Already started
                   onTimeUp={handleTimeUp}
                   onTextChange={handleTextChange}
                   initialText={submission}
