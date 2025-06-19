@@ -1,8 +1,9 @@
-// src/components/auth-provider.tsx (Corrected and Final Version)
+// src/components/auth-provider.tsx
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+// Import the singleton client instance directly
+import { supabase } from '@/lib/supabase/client';
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -14,17 +15,18 @@ export type Profile = {
 };
 
 type SupabaseContextType = {
-  supabase: SupabaseClient;
+  // We no longer pass the supabase client via context, as it can be imported directly.
+  // This is a stylistic choice, but it simplifies the provider.
   session: Session | null;
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
+  signOut: () => Promise<void>;
 };
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [supabase] = useState(() => createClient());
   const router = useRouter();
   const pathname = usePathname();
   
@@ -33,88 +35,79 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // This one-time effect will run on mount to handle all auth logic.
   useEffect(() => {
-    // 1. Proactively fetch the session on initial load
-    const fetchSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          const { data: userProfile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (error) {
-            console.error('Error fetching profile:', error.message);
-            setProfile(null);
-          } else {
-            setProfile(userProfile as Profile | null);
-          }
-        } else {
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error("Error fetching initial session:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSession();
-
-    // 2. Listen for subsequent auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // This function fetches the initial session and profile.
+    const getInitialSession = async () => {
+      const { data: { session }, } = await supabase.auth.getSession();
       
-      if (session?.user) {
+      if (session) {
+        setSession(session);
+        setUser(session.user);
         const { data: userProfile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .maybeSingle();
+          .single();
         setProfile(userProfile as Profile | null);
-      } else {
-        setProfile(null);
       }
+      setIsLoading(false);
+    };
 
-      // When the user logs out, the loading is effectively done.
-      if (_event === 'SIGNED_OUT') {
+    getInitialSession();
+
+    // This listener handles all subsequent auth events.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          setProfile(userProfile as Profile | null);
+        } else {
+          setProfile(null);
+        }
+
+        // Ensure loading is false after any auth event.
         setIsLoading(false);
       }
-    });
+    );
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
-  // This effect handles the redirect to onboarding
+  // This effect handles the redirect to onboarding if necessary.
   useEffect(() => {
-    // Don't redirect until the initial session load is complete
-    if (isLoading) {
-      return;
-    }
-
-    if (user && profile && !profile.username) {
-      if (pathname !== '/onboarding') {
-        router.push('/onboarding');
-      }
+    if (isLoading) return; // Don't do anything while loading.
+    
+    if (user && profile && !profile.username && pathname !== '/onboarding') {
+      router.push('/onboarding');
     }
   }, [user, profile, isLoading, pathname, router]);
 
-  const value = { supabase, session, user, profile, isLoading };
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/'); // Redirect to home after logout
+  };
+
+  const value = { session, user, profile, isLoading, signOut };
 
   return (
     <SupabaseContext.Provider value={value}>
-      {isLoading 
-        ? <div className="h-screen w-full flex items-center justify-center"><p className="text-gray-500">Loading Session...</p></div> 
-        : children
-      }
+      {isLoading ? (
+        <div className="h-screen w-full flex items-center justify-center">
+          <p className="text-gray-500">Loading Session...</p>
+        </div>
+      ) : (
+        children
+      )}
     </SupabaseContext.Provider>
   );
 }
