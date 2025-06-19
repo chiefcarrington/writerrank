@@ -34,6 +34,8 @@ export function createClient() {
           }
         },
       },
+      // Use the same cookie name as the browser client
+      cookieOptions: { name: 'openwrite-auth-token' },
     }
   )
 }
