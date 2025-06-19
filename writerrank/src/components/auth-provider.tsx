@@ -1,4 +1,4 @@
-// src/components/auth-provider.tsx
+// src/components/auth-provider.tsx (Corrected and Final Version)
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -34,22 +34,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // 1. Proactively fetch the session on initial load
+    const fetchSession = async () => {
       try {
-        setIsLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // VVVVVV MODIFIED BLOCK HERE VVVVVV
-          // Fetch the profile, but don't assume it exists immediately.
-          // Use .maybeSingle() which returns one row or null, without throwing an error if it's missing.
           const { data: userProfile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .maybeSingle(); // Use maybeSingle() instead of single()
-          // ^^^^^ END OF MODIFICATION ^^^^^
+            .maybeSingle();
 
           if (error) {
             console.error('Error fetching profile:', error.message);
@@ -61,8 +58,32 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           setProfile(null);
         }
       } catch (error) {
-        console.error("A critical error occurred in onAuthStateChange handler:", error);
+        console.error("Error fetching initial session:", error);
       } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSession();
+
+    // 2. Listen for subsequent auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        setProfile(userProfile as Profile | null);
+      } else {
+        setProfile(null);
+      }
+
+      // When the user logs out, the loading is effectively done.
+      if (_event === 'SIGNED_OUT') {
         setIsLoading(false);
       }
     });
@@ -72,26 +93,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
   }, [supabase]);
 
+  // This effect handles the redirect to onboarding
   useEffect(() => {
-    if (!isLoading && user && !profile) {
-      // This case handles when the user is logged in, but their profile hasn't appeared yet.
-      // We can add a small delay and refetch to give the trigger time to run.
-      const retryTimeout = setTimeout(async () => {
-        if (user) { // Check for user again inside timeout
-          const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-          setProfile(userProfile);
-        }
-      }, 1000); // Wait 1 second and try again
-
-      return () => clearTimeout(retryTimeout);
+    // Don't redirect until the initial session load is complete
+    if (isLoading) {
+      return;
     }
 
-    if (!isLoading && user && profile && !profile.username) {
+    if (user && profile && !profile.username) {
       if (pathname !== '/onboarding') {
         router.push('/onboarding');
       }
     }
-  }, [user, profile, isLoading, pathname, router, supabase]);
+  }, [user, profile, isLoading, pathname, router]);
 
   const value = { supabase, session, user, profile, isLoading };
 
