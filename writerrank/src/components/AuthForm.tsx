@@ -2,11 +2,9 @@
 'use client';
 
 import { useState } from 'react';
-// Import the singleton supabase client directly
 import { supabase } from '@/lib/supabase/client';
 
 export default function AuthForm() {
-  // We no longer get supabase from the context
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -18,12 +16,11 @@ export default function AuthForm() {
     setMessage('');
     setIsError(false);
 
-    // Use the imported supabase client
     const { error } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
-        // This is where the user will be redirected back to after clicking the magic link.
-        emailRedirectTo: `${window.location.origin}/`,
+        // Point to the new server-side callback route
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
