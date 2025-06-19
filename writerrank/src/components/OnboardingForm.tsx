@@ -27,11 +27,10 @@ export default function OnboardingForm() {
 
     if (response.ok) {
       setMessage('Username saved! Redirecting...');
-      // Redirect to the homepage after a short delay
-      setTimeout(() => {
-        router.push('/');
-        router.refresh(); // Forces a refresh of Server Components to get new data
-      }, 1500);
+      // A full page reload is the most reliable way to force the AuthProvider
+      // to re-fetch the session and the newly updated profile.
+      // This replaces the router.push and router.refresh combo.
+      window.location.href = '/';
     } else {
       setMessage(`Error: ${data.error || 'Something went wrong.'}`);
       setIsLoading(false);
