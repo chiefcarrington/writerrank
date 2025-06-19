@@ -6,5 +6,10 @@ import { createBrowserClient } from '@supabase/ssr'
 // receive the exact same client instance.
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    // Enable multi-tab session syncing and use a custom cookie name
+    auth: { multiTab: true } as any,
+    cookieOptions: { name: 'openwrite-auth-token' },
+  }
 )
