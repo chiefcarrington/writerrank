@@ -26,6 +26,8 @@ export async function middleware(request: NextRequest) {
           response.cookies.set({ name, value: '', ...options })
         },
       },
+      // Keep cookie name consistent with client and server helpers
+      cookieOptions: { name: 'openwrite-auth-token' },
     }
   )
 
