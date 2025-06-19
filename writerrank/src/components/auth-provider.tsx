@@ -4,7 +4,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 // Import the singleton client instance directly
 import { supabase } from '@/lib/supabase/client';
-import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { useRouter, usePathname } from 'next/navigation';
 
 export type Profile = {
@@ -15,8 +15,6 @@ export type Profile = {
 };
 
 type SupabaseContextType = {
-  // We no longer pass the supabase client via context, as it can be imported directly.
-  // This is a stylistic choice, but it simplifies the provider.
   session: Session | null;
   user: User | null;
   profile: Profile | null;
@@ -33,36 +31,21 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  // We start in a loading state.
   const [isLoading, setIsLoading] = useState(true);
 
-  // This one-time effect will run on mount to handle all auth logic.
   useEffect(() => {
-    // This function fetches the initial session and profile.
-    const getInitialSession = async () => {
-      const { data: { session }, } = await supabase.auth.getSession();
-      
-      if (session) {
-        setSession(session);
-        setUser(session.user);
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(userProfile as Profile | null);
-      }
-      setIsLoading(false);
-    };
-
-    getInitialSession();
-
-    // This listener handles all subsequent auth events.
+    // This listener is the single source of truth for auth state.
+    // It fires on initial load, sign-in, sign-out, and token refresh.
+    // We will not do anything until this listener gives us the initial session.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // If a user is logged in, fetch their profile.
+          // Using .single() is appropriate here because a logged-in user should always have a profile.
           const { data: userProfile } = await supabase
             .from('profiles')
             .select('*')
@@ -70,23 +53,30 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             .single();
           setProfile(userProfile as Profile | null);
         } else {
+          // If there's no session, there's no profile.
           setProfile(null);
         }
-
-        // Ensure loading is false after any auth event.
+        
+        // CRITICAL: We only set isLoading to false AFTER we have received
+        // the initial auth state from the listener.
         setIsLoading(false);
       }
     );
 
+    // Cleanup function to unsubscribe from the listener when the component unmounts.
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // The empty dependency array ensures this effect runs only once on mount.
 
-  // This effect handles the redirect to onboarding if necessary.
+  // This separate effect handles redirecting the user to onboarding if needed.
   useEffect(() => {
-    if (isLoading) return; // Don't do anything while loading.
+    // We wait until the initial loading is complete before checking for redirects.
+    if (isLoading) {
+      return;
+    }
     
+    // If we have a user and profile, but the username is missing, redirect to onboarding.
     if (user && profile && !profile.username && pathname !== '/onboarding') {
       router.push('/onboarding');
     }
@@ -94,7 +84,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    router.push('/'); // Redirect to home after logout
+    // After signing out, onAuthStateChange will fire and clear the user/profile state.
+    router.push('/');
   };
 
   const value = { session, user, profile, isLoading, signOut };
