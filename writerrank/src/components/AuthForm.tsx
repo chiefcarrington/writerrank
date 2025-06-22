@@ -19,8 +19,9 @@ export default function AuthForm() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
-        // Point to the new server-side callback route
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // Redirect straight back to the app root so the client can
+        // automatically handle the magic link token.
+        emailRedirectTo: `${window.location.origin}/`,
       },
     });
 
