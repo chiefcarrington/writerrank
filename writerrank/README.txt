@@ -59,6 +59,9 @@ Time zone considerations – The server uses new Date().toISOString().split('T')
 
 Duplicate email sending – Both /api/subscribe and /api/send-submission can send copies of submissions. The current implementation first subscribes the email, then separately calls /api/send-submission. Future refactoring could consolidate this logic to avoid duplicate code.
 
+### Seeding upcoming prompts
+To avoid 404 errors, ensure the `prompts` table always has entries scheduled for future dates. A helper script `npm run seed-prompts` seeds 30 days of prompts starting from today. It requires the environment variables `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to point to your Supabase project.
+
 Limited error handling – API routes return basic JSON error messages but do not distinguish between different database errors (e.g., network vs. RLS violations). Additional logging and user-friendly messages would improve the UX.
 
 5 Next steps (Phase 4)
