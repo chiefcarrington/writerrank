@@ -1,41 +1,37 @@
+// src/middleware.ts
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Do not run Supabase middleware on auth callback or confirm routes
+  // Skip auth routes so they can exchange codes or verify tokens without interference
   if (pathname.startsWith('/auth/callback') || pathname.startsWith('/auth/confirm')) {
     return NextResponse.next();
   }
 
-  // Clone the request for downstream handlers, preserving headers
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  // Create a response that we can modify
+  const response = NextResponse.next({ request });
 
-  // Use default cookie names (no custom cookieOptions) to match your client/server
+  // Use the new cookie API: getAll from the request, setAll on the response
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options) {
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options) {
-          response.cookies.set({ name, value: '', ...options });
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
         },
       },
     }
   );
 
-  // Refresh the user session; if it fails, log error but don’t block request
+  // Refresh the user session. If no valid session exists, getUser() will return null.
   try {
     await supabase.auth.getUser();
   } catch (error) {
@@ -45,9 +41,9 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
+// Apply middleware to all routes except static assets and images
 export const config = {
   matcher: [
-    // Match all paths except static files and images
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

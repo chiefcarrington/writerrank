@@ -1,30 +1,27 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+// src/lib/supabase/server.ts
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-// Create a Supabase client for server components, route handlers and actions.
+// Create a Supabase client for use in Server Components, Route Handlers and Server Actions
 export function createClient() {
   const cookieStore = cookies();
-
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        // Return all cookies to Supabase
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
+        // Write any cookies Supabase wants to set
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options });
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
           } catch {
-            // Ignored in server component context; middleware will refresh sessions
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch {
-            // Ignored in server component context
+            // If called in a server component context, ignore (middleware will refresh sessions)
           }
         },
       },
