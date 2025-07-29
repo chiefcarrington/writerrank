@@ -1,11 +1,9 @@
-// src/lib/supabase/server.ts
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
-// This function is for use in Server Components, Route Handlers, and Server Actions.
-// It relies on the `cookies()` header function from Next.js.
+// Create a Supabase client for server components, route handlers and actions.
 export function createClient() {
-  const cookieStore = cookies()
+  const cookieStore = cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,27 +11,23 @@ export function createClient() {
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // Ignored in server component context; middleware will refresh sessions
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch (error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            cookieStore.set({ name, value: '', ...options });
+          } catch {
+            // Ignored in server component context
           }
         },
       },
     }
-  )
+  );
 }

@@ -1,4 +1,3 @@
-// src/components/AuthForm.tsx
 'use client';
 
 import { useState } from 'react';
@@ -16,11 +15,11 @@ export default function AuthForm() {
     setMessage('');
     setIsError(false);
 
+    // Send a magic link. Do not set emailRedirectTo; your template controls the redirect URL.
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      // Do not set `emailRedirectTo`; your customised email template will determine the redirect.
       options: {
-        // optionally specify other flags, e.g. shouldCreateUser: false if you don’t want auto‑signup
+        // e.g. shouldCreateUser: false, if desired
       },
     });
 
@@ -31,6 +30,7 @@ export default function AuthForm() {
       setMessage('Check your email for the magic link!');
       setIsError(false);
     }
+
     setIsLoading(false);
   };
 
