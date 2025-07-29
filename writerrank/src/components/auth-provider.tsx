@@ -2,7 +2,6 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-// Import the singleton client instance directly
 import { supabase } from '@/lib/supabase/client';
 import type { Session, User } from '@supabase/supabase-js';
 import { useRouter, usePathname } from 'next/navigation';
@@ -31,61 +30,122 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  // We start in a loading state.
   const [isLoading, setIsLoading] = useState(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
-    // This listener is the single source of truth for auth state.
-    // It fires on initial load, sign-in, sign-out, and token refresh.
-    // We will not do anything until this listener gives us the initial session.
+    let mounted = true;
+    
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting initial session:', error);
+        }
+        
+        if (mounted) {
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          
+          if (initialSession?.user) {
+            // Fetch profile for logged-in user
+            const { data: userProfile, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', initialSession.user.id)
+              .single();
+              
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+            }
+            
+            if (mounted) {
+              setProfile(userProfile as Profile | null);
+            }
+          } else {
+            setProfile(null);
+          }
+          
+          setInitialLoadComplete(true);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Exception getting initial session:', error);
+        if (mounted) {
+          setInitialLoadComplete(true);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
+        
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // If a user is logged in, fetch their profile.
-          // Using .single() is appropriate here because a logged-in user should always have a profile.
-          const { data: userProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          setProfile(userProfile as Profile | null);
+          try {
+            const { data: userProfile, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (error) {
+              console.error('Error fetching profile after auth change:', error);
+            }
+            
+            if (mounted) {
+              setProfile(userProfile as Profile | null);
+            }
+          } catch (error) {
+            console.error('Exception fetching profile:', error);
+          }
         } else {
-          // If there's no session, there's no profile.
           setProfile(null);
         }
         
-        // CRITICAL: We only set isLoading to false AFTER we have received
-        // the initial auth state from the listener.
-        setIsLoading(false);
+        // Only update loading state after initial load is complete
+        if (initialLoadComplete && mounted) {
+          setIsLoading(false);
+        }
       }
     );
 
-    // Cleanup function to unsubscribe from the listener when the component unmounts.
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // The empty dependency array ensures this effect runs only once on mount.
+  }, [initialLoadComplete]);
 
-  // This separate effect handles redirecting the user to onboarding if needed.
+  // Handle onboarding redirect
   useEffect(() => {
-    // We wait until the initial loading is complete before checking for redirects.
-    if (isLoading) {
+    if (isLoading || !initialLoadComplete) {
       return;
     }
     
-    // If we have a user and profile, but the username is missing, redirect to onboarding.
     if (user && profile && !profile.username && pathname !== '/onboarding') {
+      console.log('Redirecting to onboarding for user without username');
       router.push('/onboarding');
     }
-  }, [user, profile, isLoading, pathname, router]);
+  }, [user, profile, isLoading, initialLoadComplete, pathname, router]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    // After signing out, onAuthStateChange will fire and clear the user/profile state.
-    router.push('/');
+    try {
+      await supabase.auth.signOut();
+      router.push('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const value = { session, user, profile, isLoading, signOut };
@@ -94,7 +154,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     <SupabaseContext.Provider value={value}>
       {isLoading ? (
         <div className="h-screen w-full flex items-center justify-center">
-          <p className="text-gray-500">Loading Session...</p>
+          <div className="text-center">
+            <p className="text-gray-500">Loading Session...</p>
+            <p className="text-xs text-gray-400 mt-2">
+              If this takes too long, try refreshing the page
+            </p>
+          </div>
         </div>
       ) : (
         children

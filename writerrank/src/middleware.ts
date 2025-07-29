@@ -3,8 +3,11 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // This `createServerClient` instance is specifically for middleware.
-  // It uses the request and response objects to manage cookies.
+  // Skip middleware for auth callback to prevent interference
+  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -26,12 +29,16 @@ export async function middleware(request: NextRequest) {
           response.cookies.set({ name, value: '', ...options })
         },
       },
+      cookieOptions: { name: 'openwrite-auth-token' },
     }
   )
 
-  // This is the crucial part that refreshes the user's session cookie
-  // and makes the session available to all server components.
-  await supabase.auth.getUser()
+  // Refresh the user's session
+  try {
+    await supabase.auth.getUser()
+  } catch (error) {
+    console.error('Middleware auth error:', error)
+  }
 
   return response
 }
@@ -43,7 +50,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - auth/callback (auth callback route)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
