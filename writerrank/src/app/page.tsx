@@ -4,11 +4,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+
 import PromptDisplay from '../components/PromptDisplay';
 import WritingArea from '../components/WritingArea';
 import CompletionView from '../components/CompletionView';
-import { useAuth } from '@/components/auth-provider';
-import AuthButton from '@/components/AuthButton'; // <<<<< IMPORT THE NEW COMPONENT
+import AuthButton from '@/components/AuthButton';
+
+import { useUser } from '@clerk/nextjs';
 
 type Prompt = {
   id: number;
@@ -18,16 +20,23 @@ type Prompt = {
 type ViewMode = 'initial' | 'writing' | 'completed';
 
 export default function HomePage() {
-  const { user, isLoading: isAuthLoading } = useAuth(); // Also get loading state
+  // Use Clerk’s user hook instead of the old useAuth
+  const { user, isLoaded } = useUser();
+  // When isLoaded is false, the user info is still loading
+  const isAuthLoading = !isLoaded;
+
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('initial');
-  const [submission, setSubmission] = useState<string>("");
+  const [submission, setSubmission] = useState<string>('');
   const [isLoadingPrompt, setIsLoadingPrompt] = useState(true);
 
-  // ... (handleSaveSubmissionToDb, setupDailyChallengeState, fetchPrompt effects remain the same)
-  const handleSaveSubmissionToDb = async (finalText: string, isAnonymous: boolean) => {
+  // Save a submission to the DB when the user is authenticated
+  const handleSaveSubmissionToDb = async (
+    finalText: string,
+    isAnonymous: boolean,
+  ) => {
     if (!user || !currentPrompt) {
-      console.log("Guest submission or missing data. Not saving to DB.");
+      console.log('Guest submission or missing data. Not saving to DB.');
       return;
     }
     try {
@@ -41,16 +50,17 @@ export default function HomePage() {
         }),
       });
       if (response.ok) {
-        console.log("Submission saved to database for user:", user.id);
+        console.log('Submission saved to database for user:', user.id);
       } else {
         const data = await response.json();
-        console.error("Failed to save submission:", data.error);
+        console.error('Failed to save submission:', data.error);
       }
     } catch (error) {
-      console.error("API call to save submission failed:", error);
+      console.error('API call to save submission failed:', error);
     }
   };
 
+  // Restore or reset daily challenge state from localStorage
   const setupDailyChallengeState = useCallback(() => {
     if (!currentPrompt) return;
     const today = new Date().toDateString();
@@ -62,11 +72,12 @@ export default function HomePage() {
       setSubmission(savedSubmission);
       setViewMode('completed');
     } else {
-      setSubmission("");
+      setSubmission('');
       setViewMode('initial');
     }
   }, [currentPrompt]);
 
+  // Fetch today’s prompt once on mount
   useEffect(() => {
     const fetchPrompt = async () => {
       setIsLoadingPrompt(true);
@@ -85,6 +96,7 @@ export default function HomePage() {
     fetchPrompt();
   }, []);
 
+  // Restore any existing submission from localStorage when prompt changes
   useEffect(() => {
     if (currentPrompt) {
       setupDailyChallengeState();
@@ -92,27 +104,33 @@ export default function HomePage() {
   }, [currentPrompt, setupDailyChallengeState]);
 
   const handleStartWriting = () => {
-    setSubmission("");
+    setSubmission('');
     setViewMode('writing');
   };
 
-  const handleTextChange = useCallback((text: string) => {
-    if (viewMode === 'writing') {
+  const handleTextChange = useCallback(
+    (text: string) => {
+      if (viewMode === 'writing') {
         setSubmission(text);
-    }
-  }, [viewMode]);
+      }
+    },
+    [viewMode],
+  );
 
-  const handleTimeUp = useCallback(async (finalText: string, isAnonymous: boolean) => {
-    if (!currentPrompt) return;
-    setSubmission(finalText);
-    setViewMode('completed');
-    const today = new Date().toDateString();
-    localStorage.setItem(`submission_${today}_${currentPrompt.id}`, finalText);
-    localStorage.setItem(`completed_${today}_${currentPrompt.id}`, 'true');
-    if (user) {
-      await handleSaveSubmissionToDb(finalText, isAnonymous);
-    }
-  }, [currentPrompt, user]);
+  const handleTimeUp = useCallback(
+    async (finalText: string, isAnonymous: boolean) => {
+      if (!currentPrompt) return;
+      setSubmission(finalText);
+      setViewMode('completed');
+      const today = new Date().toDateString();
+      localStorage.setItem(`submission_${today}_${currentPrompt.id}`, finalText);
+      localStorage.setItem(`completed_${today}_${currentPrompt.id}`, 'true');
+      if (user) {
+        await handleSaveSubmissionToDb(finalText, isAnonymous);
+      }
+    },
+    [currentPrompt, user, handleSaveSubmissionToDb],
+  );
 
   const handleWriteAgain = () => {
     setupDailyChallengeState();
@@ -122,7 +140,10 @@ export default function HomePage() {
     <>
       <Head>
         <title>OpenWrite - Daily Quick Write</title>
-        <meta name="description" content="Your daily 3-minute writing challenge." />
+        <meta
+          name="description"
+          content="Your daily 3‑minute writing challenge."
+        />
       </Head>
 
       <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-slate-100 to-sky-100">
@@ -130,27 +151,30 @@ export default function HomePage() {
           <header className="text-center mb-6 sm:mb-8">
             <Link href="/" passHref>
               <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 cursor-pointer">
-                OpenWrite 🖋️
+                OpenWrite
               </h1>
             </Link>
             <p className="text-gray-500 mt-2">
               One prompt. Three minutes. No second chances.
             </p>
-            {/* VVVVVV MODIFIED HERE VVVVVV */}
-            <div className="mt-4 h-5"> {/* h-5 gives it a fixed height to prevent layout shift */}
+            {/* Show the AuthButton only after Clerk has finished loading the user */}
+            <div className="mt-4 h-5">
               {!isAuthLoading && <AuthButton />}
             </div>
-            {/* ^^^^^ END OF MODIFICATION ^^^^^ */}
           </header>
 
-          {/* The rest of the page logic remains the same */}
+          {/* Prompt display and writing area */}
           {isLoadingPrompt ? (
             <div className="text-center p-8">Loading today's prompt...</div>
           ) : !currentPrompt ? (
-            <div className="text-center p-8 text-red-600">No prompt available for today. Please check back later.</div>
+            <div className="text-center p-8 text-red-600">
+              No prompt available for today. Please check back later.
+            </div>
           ) : (
             <>
-              {viewMode !== 'completed' && <PromptDisplay prompt={currentPrompt.prompt_text} />}
+              {viewMode !== 'completed' && (
+                <PromptDisplay prompt={currentPrompt.prompt_text} />
+              )}
               {viewMode === 'initial' && (
                 <WritingArea
                   isWritingActive={false}
@@ -185,7 +209,10 @@ export default function HomePage() {
           )}
         </div>
         <footer className="text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} OpenWrite. Inspired by daily challenges.</p>
+          <p>
+            &copy; {new Date().getFullYear()} OpenWrite. Inspired by daily
+            challenges.
+          </p>
         </footer>
       </main>
     </>

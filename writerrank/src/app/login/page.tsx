@@ -1,7 +1,11 @@
 // src/app/login/page.tsx
-import AuthForm from "@/components/AuthForm";
-import Link from "next/link";
+import Link from 'next/link';
+import { SignIn } from '@clerk/nextjs';
 
+/**
+ * LoginPage renders Clerk’s SignIn component.
+ * Clerk’s SignIn page includes the sign‑up option by default, so users can register or sign in from the same page.
+ */
 export default function LoginPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
@@ -13,7 +17,14 @@ export default function LoginPage() {
         </Link>
         <p className="text-gray-500 mt-2">Your daily writing challenge.</p>
       </header>
-      <AuthForm/>
+      {/* Clerk SignIn component renders the entire sign-in/up UI */}
+      <SignIn
+        appearance={{
+          elements: {
+            // You can customize form elements here or leave this out for defaults
+          },
+        }}
+      />
     </main>
   );
 }

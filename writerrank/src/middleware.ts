@@ -1,49 +1,22 @@
 // src/middleware.ts
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
-  // Skip auth routes so they can exchange codes or verify tokens without interference
-  if (pathname.startsWith('/auth/callback') || pathname.startsWith('/auth/confirm')) {
-    return NextResponse.next();
-  }
+/**
+ * Clerk middleware grants access to user authentication state throughout your app.
+ * It should run for most routes except for static assets.
+ */
+export default clerkMiddleware();
 
-  // Create a response that we can modify
-  const response = NextResponse.next({ request });
-
-  // Use the new cookie API: getAll from the request, setAll on the response
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  // Refresh the user session. If no valid session exists, getUser() will return null.
-  try {
-    await supabase.auth.getUser();
-  } catch (error) {
-    console.error('Middleware auth error:', error);
-  }
-
-  return response;
-}
-
-// Apply middleware to all routes except static assets and images
+/**
+ * Configure which paths the middleware applies to.
+ * The matcher here is similar to the default used in Clerk’s docs.
+ */
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Skip Next.js internals and static files
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|wof?f2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
   ],
 };

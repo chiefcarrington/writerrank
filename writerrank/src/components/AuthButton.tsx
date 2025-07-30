@@ -1,33 +1,40 @@
 // src/components/AuthButton.tsx
 'use client';
 
-import { useAuth } from './auth-provider';
-import Link from 'next/link';
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useUser,
+} from '@clerk/nextjs';
 
 export default function AuthButton() {
-  const { user, profile, signOut } = useAuth();
+  // Get the current Clerk user; this hook is safe to use in client components
+  const { user } = useUser();
 
-  // If the user object exists, show their info and a logout button
-  if (user) {
-    return (
-      <div className="flex items-center gap-4 text-sm">
-        <span className="text-gray-600">
-          Welcome, {profile?.username || user.email}
-        </span>
-        <button
-          onClick={signOut}
-          className="text-indigo-600 hover:underline focus:outline-none"
-        >
-          Log Out
-        </button>
-      </div>
-    );
-  }
-
-  // If there is no user, show the sign-in link
   return (
-    <Link href="/login" className="text-sm text-indigo-600 hover:underline">
-      Sign In / Register
-    </Link>
+    <div className="flex items-center gap-4 text-sm">
+      {/* Show this section only when signed in */}
+      <SignedIn>
+        <span className="text-gray-600">
+          {/* Display the username if present; fall back to the primary email */}
+          Welcome,&nbsp;
+          {user?.username ?? user?.primaryEmailAddress?.emailAddress ?? 'User'}
+        </span>
+        {/* UserButton includes a dropdown with Sign Out and other account options */}
+        <UserButton afterSignOutUrl="/" />
+      </SignedIn>
+
+      {/* Show this section only when signed out */}
+      <SignedOut>
+        {/* Use Clerk’s built‑in SignInButton; you can set `mode="modal"` for a popup */}
+        <SignInButton mode="modal">
+          <button className="text-indigo-600 hover:underline focus:outline-none">
+            Sign In / Register
+          </button>
+        </SignInButton>
+      </SignedOut>
+    </div>
   );
 }

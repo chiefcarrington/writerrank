@@ -3,45 +3,55 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from './auth-provider';
+import { useUser } from '@clerk/nextjs';
 
+/**
+ * OnboardingForm allows a newly registered user to choose a public username.
+ * The form sends the username to `/api/profile`, which updates the user’s record
+ * in the Supabase `profiles` table using their Clerk user ID.
+ */
 export default function OnboardingForm() {
-  const { user } = useAuth();
+  // Although we don't need the user object here, fetching it ensures the user is signed in.
+  const { user } = useUser();
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  const handleSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setMessage('');
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setIsLoading(true);
+      setMessage('');
 
-    const response = await fetch('/api/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username }),
-    });
+      // Send the username to the API route; it will use getAuth() to identify the user
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      setMessage('Username saved! Redirecting...');
-      // A full page reload is the most reliable way to force the AuthProvider
-      // to re-fetch the session and the newly updated profile.
-      // This replaces the router.push and router.refresh combo.
-      window.location.href = '/';
-    } else {
-      setMessage(`Error: ${data.error || 'Something went wrong.'}`);
-      setIsLoading(false);
-    }
-  }, [username, router]);
+      if (response.ok) {
+        setMessage('Username saved! Redirecting...');
+        // Force a full page reload to refresh user context after updating profile
+        window.location.href = '/';
+      } else {
+        setMessage(`Error: ${data.error || 'Something went wrong.'}`);
+        setIsLoading(false);
+      }
+    },
+    [username],
+  );
 
   return (
     <div className="w-full max-w-sm mx-auto p-8 bg-white rounded-lg shadow-xl">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">Welcome to OpenWrite!</h2>
+      <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
+        Welcome to OpenWrite!
+      </h2>
       <p className="text-center text-gray-600 mb-6">
-        Let's set up your public username.
+        Let’s set up your public username.
       </p>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -63,8 +73,8 @@ export default function OnboardingForm() {
               className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300"
             />
           </div>
-           <p className="mt-2 text-xs text-gray-500">
-            3-20 characters. Lowercase letters, numbers, and underscores only.
+          <p className="mt-2 text-xs text-gray-500">
+            3–20 characters. Lowercase letters, numbers, and underscores only.
           </p>
         </div>
         <button
@@ -75,7 +85,9 @@ export default function OnboardingForm() {
           {isLoading ? 'Saving...' : 'Save Username'}
         </button>
       </form>
-      {message && <p className="mt-4 text-center text-sm text-gray-600">{message}</p>}
+      {message && (
+        <p className="mt-4 text-center text-sm text-gray-600">{message}</p>
+      )}
     </div>
   );
 }

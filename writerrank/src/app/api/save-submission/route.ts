@@ -1,40 +1,57 @@
-// src/app/api/save-submission/route.ts
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server'; // Import our new server client
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuth } from '@clerk/nextjs/server';
+import { createClient } from '@/lib/supabase/server';
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
+  // Get the authenticated user ID from Clerk
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'You must be logged in to submit.' },
+      { status: 401 },
+    );
+  }
+
+  // Parse incoming data
+  const { promptId, submissionText, isAnonymous } = await req.json();
+
+  // Validate data types
+  if (
+    typeof promptId !== 'number' ||
+    typeof submissionText !== 'string' ||
+    typeof isAnonymous !== 'boolean'
+  ) {
+    return NextResponse.json(
+      { error: 'Invalid data format.' },
+      { status: 400 },
+    );
+  }
+
+  // Create a Supabase client for DB operations
   const supabase = createClient();
 
-  // First, check if the user is authenticated
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'You must be logged in to submit.' }, { status: 401 });
-  }
-
-  // Parse the request body
-  const { promptId, submissionText, isAnonymous } = await request.json();
-
-  // Validate the incoming data
-  if (typeof promptId !== 'number' || typeof submissionText !== 'string' || typeof isAnonymous !== 'boolean') {
-    return NextResponse.json({ error: 'Invalid data format.' }, { status: 400 });
-  }
-
-  // Prepare the data for insertion
+  // Prepare the submission data, using clerk_id instead of the old user_id
   const submissionData = {
-    user_id: user.id, // The user's ID comes from the authenticated session
+    clerk_id: userId,
     prompt_id: promptId,
     submission_text: submissionText,
     is_anonymous: isAnonymous,
   };
 
-  // Insert the data into the 'submissions' table
+  // Insert the submission into the database
   const { error } = await supabase.from('submissions').insert(submissionData);
 
   if (error) {
     console.error('Supabase submission error:', error);
-    return NextResponse.json({ error: 'Failed to save submission.' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to save submission.' },
+      { status: 500 },
+    );
   }
 
-  return NextResponse.json({ message: 'Submission saved successfully!' }, { status: 201 });
+  return NextResponse.json(
+    { message: 'Submission saved successfully!' },
+    { status: 201 },
+  );
 }
