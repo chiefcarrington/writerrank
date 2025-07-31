@@ -12,8 +12,9 @@
 
 @layer base {
   :root {
-    --ow-orange-50: theme('colors.ow-orange-50');
-    --ow-orange-500: theme('colors.ow-orange-500');
+    /* Use explicit color values to avoid theme resolution issues */
+    --ow-orange-50: #fff7ed;
+    --ow-orange-500: #f97316;
   }
 
   .primary {
