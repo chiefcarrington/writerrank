@@ -64,10 +64,8 @@ export async function POST(request: Request) {
         submissionText: submissionText,
       });
 
-      // VVVVVV THE FIX IS HERE VVVVVV
       // Await the render function to get the string, as required by your environment's types
       const emailHtml = await render(emailElement);
-      // ^^^^^ END OF FIX ^^^^^
 
       await resend.emails.send({
         from: 'OpenWrite <noreply@yourverifieddomain.com>', // REPLACE with your verified domain

@@ -60,7 +60,6 @@ export default function EmailForm({ promptText, submissionText }: EmailFormProps
       return;
     }
 
-    // VVVVVV MODIFIED HERE: let -> const VVVVVV
     const registeredEmail = email.toLowerCase(); // Use the submitted email for sending
 
     try {

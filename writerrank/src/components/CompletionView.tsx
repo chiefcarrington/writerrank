@@ -19,7 +19,6 @@ const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentProm
 
       <div className="my-8 border-t border-gray-200 pt-8">
         <EmailForm
-          // VVVVVV MODIFIED HERE VVVVVV
           promptText={currentPrompt === null ? undefined : currentPrompt}
           submissionText={submission}
         />
