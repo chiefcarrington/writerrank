@@ -31,34 +31,34 @@ export default function HomePage() {
   const [isLoadingPrompt, setIsLoadingPrompt] = useState(true);
 
   // Save a submission to the DB when the user is authenticated
-  const handleSaveSubmissionToDb = async (
-    finalText: string,
-    isAnonymous: boolean,
-  ) => {
-    if (!user || !currentPrompt) {
-      console.log('Guest submission or missing data. Not saving to DB.');
-      return;
-    }
-    try {
-      const response = await fetch('/api/save-submission', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          promptId: currentPrompt.id,
-          submissionText: finalText,
-          isAnonymous: isAnonymous,
-        }),
-      });
-      if (response.ok) {
-        console.log('Submission saved to database for user:', user.id);
-      } else {
-        const data = await response.json();
-        console.error('Failed to save submission:', data.error);
+  const handleSaveSubmissionToDb = useCallback(
+    async (finalText: string, isAnonymous: boolean) => {
+      if (!user || !currentPrompt) {
+        console.log('Guest submission or missing data. Not saving to DB.');
+        return;
       }
-    } catch (error) {
-      console.error('API call to save submission failed:', error);
-    }
-  };
+      try {
+        const response = await fetch('/api/save-submission', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            promptId: currentPrompt.id,
+            submissionText: finalText,
+            isAnonymous: isAnonymous,
+          }),
+        });
+        if (response.ok) {
+          console.log('Submission saved to database for user:', user.id);
+        } else {
+          const data = await response.json();
+          console.error('Failed to save submission:', data.error);
+        }
+      } catch (error) {
+        console.error('API call to save submission failed:', error);
+      }
+    },
+    [user, currentPrompt],
+  );
 
   // Restore or reset daily challenge state from localStorage
   const setupDailyChallengeState = useCallback(() => {
