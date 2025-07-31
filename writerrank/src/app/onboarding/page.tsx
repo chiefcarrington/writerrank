@@ -6,6 +6,8 @@ import {
   SignInButton,
 } from '@clerk/nextjs';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * OnboardingPage wraps the onboarding form in SignedIn/SignedOut.
  * Unauthenticated visitors are prompted to sign in first.

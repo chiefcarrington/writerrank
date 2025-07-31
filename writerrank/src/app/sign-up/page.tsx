@@ -1,6 +1,8 @@
 // src/app/sign-up/page.tsx
 import { SignUp } from '@clerk/nextjs';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * The SignUpPage displays Clerk’s SignUp component.
  * New users can create an account and then complete onboarding.

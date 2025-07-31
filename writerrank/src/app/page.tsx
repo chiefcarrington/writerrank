@@ -1,6 +1,9 @@
 // src/app/page.tsx
 'use client';
 
+// Clerk is loaded client-side, so ensure this page is rendered dynamically.
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';

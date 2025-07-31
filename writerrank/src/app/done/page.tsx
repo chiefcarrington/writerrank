@@ -1,11 +1,15 @@
 'use client';
 
+// This page relies on runtime-only data (search params) so disable static
+// generation to prevent build errors when env vars are missing.
+export const dynamic = 'force-dynamic';
+
 import { useSearchParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { Suspense } from 'react';
 
-const EmailForm = dynamic(() => import('@/components/EmailForm'), { ssr: false });
-const AuthButton = dynamic(() => import('@/components/AuthButton'), { ssr: false });
+const EmailForm = dynamicImport(() => import('@/components/EmailForm'), { ssr: false });
+const AuthButton = dynamicImport(() => import('@/components/AuthButton'), { ssr: false });
 
 export default function DonePage() {
   const searchParams = useSearchParams();

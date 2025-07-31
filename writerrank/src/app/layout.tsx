@@ -12,6 +12,9 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 
+// Avoid build-time evaluation of Clerk which requires environment variables.
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
