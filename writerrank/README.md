@@ -2,9 +2,10 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+From the repository root, change into the `writerrank` directory and start the development server:
 
 ```bash
+cd writerrank
 npm run dev
 # or
 yarn dev
