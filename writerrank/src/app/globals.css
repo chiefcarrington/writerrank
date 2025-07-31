@@ -9,6 +9,17 @@ body {
   font-family: sans-serif;
 }
 
+@layer base {
+  :root {
+    --ow-orange-50: theme('colors.ow-orange-50');
+    --ow-orange-500: theme('colors.ow-orange-500');
+  }
+
+  .primary {
+    @apply text-ow-orange-500;
+  }
+}
+
 /* @import "tailwindcss";
 
 :root {
