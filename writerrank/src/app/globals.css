@@ -5,8 +5,7 @@
 
 /* Optional: Add some basic body styling */
 body {
-  @apply bg-gray-100 text-gray-800;
-  font-family: sans-serif;
+  @apply bg-gray-100 text-gray-800 font-sans;
 }
 
 @layer base {
