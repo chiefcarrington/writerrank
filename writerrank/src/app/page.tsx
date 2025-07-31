@@ -12,9 +12,9 @@ import { useRouter } from 'next/navigation';
 import PromptDisplay from '../components/PromptDisplay';
 import WritingArea from '../components/WritingArea';
 import CompletionView from '../components/CompletionView';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 
-const AuthButton = dynamic(() => import('@/components/AuthButton'), {
+const AuthButton = dynamicImport(() => import('@/components/AuthButton'), {
   ssr: false,
 });
 
