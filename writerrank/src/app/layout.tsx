@@ -1,6 +1,5 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
 import {
@@ -30,7 +29,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={inter.className}>
+        <body>
           {/* Header shows sign-in/up when signed out and user menu when signed in */}
           <header className="flex justify-end items-center p-4 gap-4 h-16">
             <SignedOut>

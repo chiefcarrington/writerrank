@@ -4,9 +4,21 @@
 @tailwind utilities;
 
 /* Optional: Add some basic body styling */
-body {
-  @apply bg-gray-100 text-gray-800;
-  font-family: sans-serif;
+@layer base {
+  body {
+    @apply bg-gray-100 text-gray-800 font-sans;
+  }
+}
+
+@layer base {
+  :root {
+    --ow-orange-50: theme('colors.ow-orange-50');
+    --ow-orange-500: theme('colors.ow-orange-500');
+  }
+
+  .primary {
+    @apply text-ow-orange-500;
+  }
 }
 
 /* @import "tailwindcss";
