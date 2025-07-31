@@ -29,10 +29,23 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
+  // refs to keep stable references inside the timer interval
+  const onTimeUpRef = useRef(onTimeUp);
+  const isAnonymousRef = useRef(isAnonymous);
+
   const currentTextRef = useRef(text);
   useEffect(() => {
     currentTextRef.current = text;
   }, [text]);
+
+  // keep callback and anonymity status refs updated
+  useEffect(() => {
+    onTimeUpRef.current = onTimeUp;
+  }, [onTimeUp]);
+
+  useEffect(() => {
+    isAnonymousRef.current = isAnonymous;
+  }, [isAnonymous]);
 
   useEffect(() => {
     if (isWritingActive) {
@@ -41,12 +54,12 @@ const WritingArea: React.FC<WritingAreaProps> = ({
         textAreaRef.current.focus();
       }
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      
+
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-            onTimeUp(currentTextRef.current, isAnonymous); // Pass anonymity state
+            onTimeUpRef.current(currentTextRef.current, isAnonymousRef.current);
             return 0;
           }
           return prevTime - 1;
@@ -58,7 +71,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  }, [isWritingActive, onTimeUp, isAnonymous]); // Added isAnonymous to dependency array
+  }, [isWritingActive]);
 
   useEffect(() => {
     onTextChange(text);
