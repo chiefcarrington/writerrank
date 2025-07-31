@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { SignIn } from '@clerk/nextjs';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * LoginPage renders Clerk’s SignIn component.
  * Clerk’s SignIn page includes the sign‑up option by default, so users can register or sign in from the same page.

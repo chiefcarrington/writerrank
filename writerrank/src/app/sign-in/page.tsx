@@ -1,6 +1,8 @@
 // src/app/sign-in/page.tsx
 import { SignIn } from '@clerk/nextjs';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * The SignInPage displays Clerk’s SignIn component.
  * Users can sign in or switch to sign up from this component.
