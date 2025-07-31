@@ -26,7 +26,8 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   const [text, setText] = useState(initialText);
   const [timeLeft, setTimeLeft] = useState(WRITING_DURATION_SECONDS);
   const [isAnonymous, setIsAnonymous] = useState(false); // State for the checkbox
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   // refs to keep stable references inside the timer interval
@@ -48,28 +49,33 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   }, [isAnonymous]);
 
   useEffect(() => {
+    const update = () => {
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      const remaining = WRITING_DURATION_SECONDS - elapsed;
+      if (remaining <= 0) {
+        setTimeLeft(0);
+        onTimeUpRef.current(currentTextRef.current, isAnonymousRef.current);
+        return;
+      } else {
+        setTimeLeft(Math.ceil(remaining));
+        rafRef.current = requestAnimationFrame(update);
+      }
+    };
+
     if (isWritingActive) {
       setTimeLeft(WRITING_DURATION_SECONDS);
       if (textAreaRef.current) {
         textAreaRef.current.focus();
       }
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-
-      timerIntervalRef.current = setInterval(() => {
-        setTimeLeft((prevTime) => {
-          if (prevTime <= 1) {
-            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-            onTimeUpRef.current(currentTextRef.current, isAnonymousRef.current);
-            return 0;
-          }
-          return prevTime - 1;
-        });
-      }, 1000);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      startTimeRef.current = Date.now();
+      rafRef.current = requestAnimationFrame(update);
     } else {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     }
+
     return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
   }, [isWritingActive]);
 
@@ -90,8 +96,8 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   };
 
   const handleManualSubmit = () => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
     }
     onTimeUp(currentTextRef.current, isAnonymous); // Pass anonymity state
   };
@@ -107,7 +113,15 @@ const WritingArea: React.FC<WritingAreaProps> = ({
         className="w-full h-64 p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 resize-none text-base"
         aria-label="Writing input"
       />
-      
+
+      <progress
+        id="timer"
+        max={WRITING_DURATION_SECONDS}
+        value={WRITING_DURATION_SECONDS - timeLeft}
+        className="w-full h-2 mt-2"
+        style={{ accentColor: timeLeft <= 10 ? 'red' : 'green' }}
+      />
+
       {/* Container for bottom controls */}
       <div className="mt-4 flex justify-between items-center">
         {/* Checkbox appears only when writing is active */}
@@ -148,7 +162,9 @@ const WritingArea: React.FC<WritingAreaProps> = ({
                 >
                 Submit
                 </button>
-                <div className="px-6 py-2 bg-green-500 text-white font-semibold rounded-md">
+                <div
+                className={`px-6 py-2 text-white font-semibold rounded-md ${timeLeft <= 10 ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}
+                >
                 Time Left: {formatTime(timeLeft)}
                 </div>
             </>
