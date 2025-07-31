@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import PromptDisplay from '../components/PromptDisplay';
 import WritingArea from '../components/WritingArea';
@@ -24,6 +25,7 @@ export default function HomePage() {
   const { user, isLoaded } = useUser();
   // When isLoaded is false, the user info is still loading
   const isAuthLoading = !isLoaded;
+  const router = useRouter();
 
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('initial');
@@ -47,7 +49,9 @@ export default function HomePage() {
             isAnonymous: isAnonymous,
           }),
         });
-        if (response.ok) {
+        if (response.redirected) {
+          router.push(response.url);
+        } else if (response.ok) {
           console.log('Submission saved to database for user:', user.id);
         } else {
           const data = await response.json();
@@ -57,7 +61,7 @@ export default function HomePage() {
         console.error('API call to save submission failed:', error);
       }
     },
-    [user, currentPrompt],
+    [user, currentPrompt, router],
   );
 
   // Restore or reset daily challenge state from localStorage
