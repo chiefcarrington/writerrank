@@ -12,11 +12,6 @@ import { useRouter } from 'next/navigation';
 import PromptDisplay from '../components/PromptDisplay';
 import WritingArea from '../components/WritingArea';
 import CompletionView from '../components/CompletionView';
-import dynamicImport from 'next/dynamic';
-
-const AuthButton = dynamicImport(() => import('@/components/AuthButton'), {
-  ssr: false,
-});
 
 import { useUser } from '@clerk/nextjs';
 
@@ -29,9 +24,7 @@ type ViewMode = 'initial' | 'writing' | 'completed';
 
 export default function HomePage() {
   // Use Clerk’s user hook instead of the old useAuth
-  const { user, isLoaded } = useUser();
-  // When isLoaded is false, the user info is still loading
-  const isAuthLoading = !isLoaded;
+  const { user } = useUser();
   const router = useRouter();
 
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
@@ -157,22 +150,8 @@ export default function HomePage() {
         />
       </Head>
 
-      <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-slate-100 to-sky-100">
-        <div className="w-full max-w-3xl bg-white p-6 sm:p-8 rounded-xl shadow-2xl mb-8">
-          <header className="text-center mb-6 sm:mb-8">
-            <Link href="/" passHref>
-              <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 cursor-pointer">
-                OpenWrite
-              </h1>
-            </Link>
-            <p className="text-gray-500 mt-2">
-              One prompt. Three minutes. No second chances.
-            </p>
-            {/* Show the AuthButton only after Clerk has finished loading the user */}
-            <div className="mt-4 h-5">
-              {!isAuthLoading && <AuthButton />}
-            </div>
-          </header>
+      <main className="container mx-auto px-6 py-12">
+        <div className="w-full max-w-3xl bg-white p-6 sm:p-8 rounded-xl shadow-xl mb-8">
 
           {/* Prompt display and writing area */}
           {isLoadingPrompt ? (

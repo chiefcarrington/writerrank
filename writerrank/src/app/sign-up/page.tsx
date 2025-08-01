@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  */
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-ow-orange-50 text-ow-neutral-900">
       <SignUp
         appearance={{
           elements: {
