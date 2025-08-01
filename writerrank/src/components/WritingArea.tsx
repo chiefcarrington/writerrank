@@ -79,8 +79,8 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   const timerColor = timeLeft <= 30
     ? 'text-red-500'
     : timeLeft <= 60
-      ? 'text-ow-orange-500'
-      : 'text-ow-neutral-50';
+      ? 'text-[color:var(--ow-orange-500)]'
+      : 'text-[color:var(--ow-neutral-50)]';
 
   const handleManualSubmit = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -89,7 +89,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      <div className="relative rounded-lg overflow-hidden shadow-inner">
+      <div className="rounded-lg overflow-hidden shadow-inner relative">
         <textarea
           ref={textAreaRef}
           value={text}
@@ -101,14 +101,12 @@ const WritingArea: React.FC<WritingAreaProps> = ({
           }
           disabled={locked || !isWritingActive}
           aria-label="Writing input"
-          className="min-h-[320px] w-full resize-none border-none rounded-none
-                     text-base leading-relaxed text-ow-neutral-900
-                     bg-white/60 backdrop-blur-sm shadow-inner
-                     focus:ring-ow-orange-500 focus:border-ow-orange-500"
+          className="min-h-[320px] w-full border-none text-[color:var(--ow-neutral-900)] text-base leading-relaxed resize-none rounded-none shadow-inner bg-white/60 backdrop-blur-sm"
+                     
         />
 
-        <div className="bg-ow-neutral-900 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm text-ow-neutral-50/80">
+        <div className="bg-[color:var(--ow-neutral-900)] px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             {isWritingActive && (
               <label
                 htmlFor="anonymous-checkbox"
@@ -120,12 +118,12 @@ const WritingArea: React.FC<WritingAreaProps> = ({
                   checked={isAnonymous}
                   onChange={(e) => setIsAnonymous(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300
-                             text-ow-orange-500 focus:ring-ow-orange-500"
+                             text-[color:var(--ow-orange-500)] focus:ring-[color:var(--ow-orange-500)]"
                 />
                 <span className="ml-2">Post anonymously</span>
               </label>
             )}
-            <span>{text.length} characters</span>
+            <div className="text-sm text-[color:var(--ow-neutral-50)]/80">{text.length} characters</div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -138,23 +136,22 @@ const WritingArea: React.FC<WritingAreaProps> = ({
             {!isWritingActive && !locked && (
               <button
                 onClick={() => { setText(''); onStartWriting(); }}
-                className="px-6 py-2 rounded-md shadow-lg
-                           bg-ow-orange-500 text-white
-                           hover:bg-ow-orange-500/90"
-              >
-                Start
-              </button>
+                className="px-6 rounded-md shadow-lg
+                           bg-[color:var(--ow-orange-500)] text-white
+                           hover:bg-[color:var(--ow-orange-500)]/90"
+              >START</button>
             )}
 
             {isWritingActive && (
               <button
                 onClick={handleManualSubmit}
-                className="px-6 py-2 rounded-md shadow-lg
-                           bg-ow-orange-500 text-white
-                           hover:bg-ow-orange-500/90"
-              >
-                Submit
-              </button>
+                className="px-6 rounded-md shadow-lg
+                           bg-[color:var(--ow-orange-500)] text-white
+                           hover:bg-[color:var(--ow-orange-500)]/90"
+              >SUBMIT</button>
+            )}
+            {!isWritingActive && locked && (
+              <button disabled className="px-6 rounded-md shadow-lg bg-[color:var(--ow-orange-500)] hover:bg-[color:var(--ow-orange-500)]/90 text-white opacity-75">SUBMITTED</button>
             )}
           </div>
         </div>
