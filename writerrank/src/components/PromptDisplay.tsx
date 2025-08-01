@@ -9,12 +9,12 @@ const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
   if (!prompt) return null;
 
   return (
-    <div className="my-6 p-4 bg-indigo-100 border-l-4 border-indigo-500 rounded-md shadow-sm">
-      {/* Corrected line below */}
-      <p className="text-lg font-semibold text-indigo-700">Today&apos;s Prompt:</p>
-      <p className="mt-1 text-gray-700">{prompt}</p>
+    <div className="text-center">
+      <div className="p-6">
+        <p className="text-xl text-ow-neutral-900 leading-relaxed">{prompt}</p>
+      </div>
     </div>
   );
-};
+}; 
 
 export default PromptDisplay;

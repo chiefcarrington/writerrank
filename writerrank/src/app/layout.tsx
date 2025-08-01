@@ -31,24 +31,29 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body>
-          {/* Header shows sign-in/up when signed out and user menu when signed in */}
-          <header className="flex justify-end items-center p-4 gap-4 h-16">
-            <SignedOut>
-              <SignInButton>
-                <button className="px-4 py-2 bg-blue-500 text-white rounded">
-                  Sign In
-                </button>
-              </SignInButton>
-              <SignUpButton>
-                <button className="px-4 py-2 bg-green-500 text-white rounded">
-                  Sign Up
-                </button>
-              </SignUpButton>
-            </SignedOut>
-            <SignedIn>
-              {/* UserButton provides a dropdown with sign-out and account options */}
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
+          <header className="w-full bg-ow-orange-50">
+            <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+              <a href="/">
+                <h1 className="text-2xl font-bold text-ow-neutral-900">OpenWrite</h1>
+              </a>
+              <div className="flex items-center gap-3">
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="px-4 py-2 rounded-md text-ow-neutral-900 hover:bg-gray-100">
+                      Sign In
+                    </button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="px-4 py-2 rounded-md bg-ow-orange-500 text-white">
+                      Sign Up
+                    </button>
+                  </SignUpButton>
+                </SignedOut>
+                <SignedIn>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
+              </div>
+            </div>
           </header>
           {children}
         </body>

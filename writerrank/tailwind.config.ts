@@ -2,7 +2,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx,css}'],
   theme: {
     extend: {
       backgroundImage: {
@@ -11,8 +11,10 @@ const config: Config = {
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
       colors: {
-        'ow-orange-50': '#fff7ed',
-        'ow-orange-500': '#f97316',
+        'ow-orange-50': '#FFF8F2',
+        'ow-orange-500': '#FF6B00',
+        'ow-neutral-900': '#111827',
+        'ow-neutral-50': '#FFFFFF',
       },
     },
   },
