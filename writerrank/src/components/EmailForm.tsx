@@ -126,12 +126,12 @@ export default function EmailForm({ promptText, submissionText }: EmailFormProps
         </button>
       </form>
       {message && (
-        <p className={`mt-4 text-center text-sm ${isError ? 'text-red-600' : 'text-green-700'}`}>
+        <p className={`mt-4 text-center text-sm ${isError ? 'text-red-600' : 'text-[color:var(--ow-neutral-900)]'}`}>
           {message}
         </p>
       )}
       {emailSentMessage && (
-        <p className="mt-2 text-center text-sm text-blue-600">
+        <p className="mt-2 text-center text-sm text-[color:var(--ow-neutral-900)]">
           {emailSentMessage}
         </p>
       )}

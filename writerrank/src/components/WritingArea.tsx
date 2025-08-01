@@ -37,9 +37,15 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   const isAnonymousRef = useRef(isAnonymous);
   const currentTextRef = useRef(text);
 
-  useEffect(() => { currentTextRef.current = text; }, [text]);
-  useEffect(() => { onTimeUpRef.current = onTimeUp; }, [onTimeUp]);
-  useEffect(() => { isAnonymousRef.current = isAnonymous; }, [isAnonymous]);
+  useEffect(() => {
+    currentTextRef.current = text;
+  }, [text]);
+  useEffect(() => {
+    onTimeUpRef.current = onTimeUp;
+  }, [onTimeUp]);
+  useEffect(() => {
+    isAnonymousRef.current = isAnonymous;
+  }, [isAnonymous]);
 
   useEffect(() => {
     const update = () => {
@@ -66,10 +72,14 @@ const WritingArea: React.FC<WritingAreaProps> = ({
       cancelAnimationFrame(rafRef.current);
     }
 
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [isWritingActive]);
 
-  useEffect(() => { onTextChange(text); }, [text, onTextChange]);
+  useEffect(() => {
+    onTextChange(text);
+  }, [text, onTextChange]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!locked && isWritingActive) setText(e.target.value);
@@ -78,11 +88,12 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   const formatTime = (s: number) =>
     `${Math.floor(s / 60)}:${s % 60 < 10 ? '0' : ''}${s % 60}`;
 
-  const timerColor = timeLeft <= 30
-    ? 'text-red-500'
-    : timeLeft <= 60
-      ? 'text-ow-orange-500'
-      : 'text-ow-neutral-50';
+  const timerColor =
+    timeLeft <= 30
+      ? 'text-red-500'
+      : timeLeft <= 60
+      ? 'text-[color:var(--ow-orange-500)]'
+      : 'text-[color:var(--ow-neutral-50)]';
 
   const handleManualSubmit = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -91,7 +102,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      <div className="relative rounded-lg overflow-hidden shadow-inner">
+      <div className="rounded-lg overflow-hidden shadow-inner relative">
         <Textarea
           ref={textAreaRef}
           value={text}
@@ -104,13 +115,15 @@ const WritingArea: React.FC<WritingAreaProps> = ({
           disabled={locked || !isWritingActive}
           aria-label="Writing input"
           className="min-h-[320px] w-full border-none rounded-none
-                     text-base leading-relaxed text-ow-neutral-900
+                     resize-none text-base leading-relaxed
+                     text-[color:var(--ow-neutral-900)]
                      bg-white/60 backdrop-blur-sm shadow-inner
-                     focus:ring-ow-orange-500 focus:border-ow-orange-500"
+                     focus:ring-[color:var(--ow-orange-500)]
+                     focus:border-[color:var(--ow-orange-500)]"
         />
 
-        <div className="bg-ow-neutral-900 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm text-ow-neutral-50/80">
+        <div className="bg-[color:var(--ow-neutral-900)] px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             {isWritingActive && (
               <label
                 htmlFor="anonymous-checkbox"
@@ -122,12 +135,15 @@ const WritingArea: React.FC<WritingAreaProps> = ({
                   checked={isAnonymous}
                   onChange={(e) => setIsAnonymous(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300
-                             text-ow-orange-500 focus:ring-ow-orange-500"
+                             text-[color:var(--ow-orange-500)]
+                             focus:ring-[color:var(--ow-orange-500)]"
                 />
                 <span className="ml-2">Post anonymously</span>
               </label>
             )}
-            <span>{text.length} characters</span>
+            <div className="text-sm text-[color:var(--ow-neutral-50)]/80">
+              {text.length} characters
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -143,18 +159,33 @@ const WritingArea: React.FC<WritingAreaProps> = ({
                   setText('');
                   onStartWriting();
                 }}
-                className="px-6 py-2 shadow-lg bg-ow-orange-500 text-white hover:bg-ow-orange-500/90"
+                className="px-6 py-2 rounded-md shadow-lg
+                           bg-[color:var(--ow-orange-500)] text-white
+                           hover:bg-[color:var(--ow-orange-500)]/90"
               >
-                Start
+                START
               </Button>
             )}
 
             {isWritingActive && (
               <Button
                 onClick={handleManualSubmit}
-                className="px-6 py-2 shadow-lg bg-ow-orange-500 text-white hover:bg-ow-orange-500/90"
+                className="px-6 py-2 rounded-md shadow-lg
+                           bg-[color:var(--ow-orange-500)] text-white
+                           hover:bg-[color:var(--ow-orange-500)]/90"
               >
-                Submit
+                SUBMIT
+              </Button>
+            )}
+
+            {!isWritingActive && locked && (
+              <Button
+                disabled
+                className="px-6 py-2 rounded-md shadow-lg
+                           bg-[color:var(--ow-orange-500)] text-white
+                           opacity-75"
+              >
+                SUBMITTED
               </Button>
             )}
           </div>
