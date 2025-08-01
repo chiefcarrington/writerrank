@@ -31,20 +31,20 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body>
-          <header className="w-full bg-ow-orange-50">
+          <header className="w-full bg-[color:var(--ow-orange-50)]">
             <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
               <a href="/">
-                <h1 className="text-2xl font-bold text-ow-neutral-900">OpenWrite</h1>
+                <h1 className="text-2xl font-bold text-[color:var(--ow-neutral-900)]">OpenWrite</h1>
               </a>
               <div className="flex items-center gap-3">
                 <SignedOut>
                   <SignInButton mode="modal">
-                    <button className="px-4 py-2 rounded-md text-ow-neutral-900 hover:bg-gray-100">
+                    <button className="px-4 py-2 rounded-md text-[color:var(--ow-neutral-900)] hover:bg-gray-100">
                       Sign In
                     </button>
                   </SignInButton>
                   <SignUpButton mode="modal">
-                    <button className="px-4 py-2 rounded-md bg-ow-orange-500 text-white">
+                    <button className="px-4 py-2 rounded-md bg-[color:var(--ow-orange-500)] hover:bg-[color:var(--ow-orange-500)]/90 text-white">
                       Sign Up
                     </button>
                   </SignUpButton>
