@@ -151,54 +151,51 @@ export default function HomePage() {
       </Head>
 
       <main className="container mx-auto px-6 py-12">
-        <div className="w-full max-w-3xl bg-white p-6 sm:p-8 rounded-xl shadow-xl mb-8">
-
-          {/* Prompt display and writing area */}
-          {isLoadingPrompt ? (
-            <div className="text-center p-8">Loading today's prompt...</div>
-          ) : !currentPrompt ? (
-            <div className="text-center p-8 text-red-600">
-              No prompt available for today. Please check back later.
-            </div>
-          ) : (
-            <>
-              {viewMode !== 'completed' && (
+        {/* Prompt display and writing area */}
+        {isLoadingPrompt ? (
+          <div className="text-center p-8">Loading today's prompt...</div>
+        ) : !currentPrompt ? (
+          <div className="text-center p-8 text-red-600">
+            No prompt available for today. Please check back later.
+          </div>
+        ) : (
+          <>
+            {viewMode !== 'completed' && (
+              <PromptDisplay prompt={currentPrompt.prompt_text} />
+            )}
+            {viewMode === 'initial' && (
+              <WritingArea
+                isWritingActive={false}
+                onStartWriting={handleStartWriting}
+                onTimeUp={handleTimeUp}
+                onTextChange={() => {}}
+                locked={false}
+                initialText=""
+              />
+            )}
+            {viewMode === 'writing' && (
+              <WritingArea
+                isWritingActive={true}
+                onStartWriting={() => {}}
+                onTimeUp={handleTimeUp}
+                onTextChange={handleTextChange}
+                initialText={submission}
+                locked={false}
+              />
+            )}
+            {viewMode === 'completed' && (
+              <>
                 <PromptDisplay prompt={currentPrompt.prompt_text} />
-              )}
-              {viewMode === 'initial' && (
-                <WritingArea
-                  isWritingActive={false}
-                  onStartWriting={handleStartWriting}
-                  onTimeUp={handleTimeUp}
-                  onTextChange={() => {}}
-                  locked={false}
-                  initialText=""
+                <CompletionView
+                  submission={submission}
+                  currentPrompt={currentPrompt.prompt_text}
+                  onWriteAgain={handleWriteAgain}
                 />
-              )}
-              {viewMode === 'writing' && (
-                <WritingArea
-                  isWritingActive={true}
-                  onStartWriting={() => {}}
-                  onTimeUp={handleTimeUp}
-                  onTextChange={handleTextChange}
-                  initialText={submission}
-                  locked={false}
-                />
-              )}
-              {viewMode === 'completed' && (
-                <>
-                  <PromptDisplay prompt={currentPrompt.prompt_text} />
-                  <CompletionView
-                    submission={submission}
-                    currentPrompt={currentPrompt.prompt_text}
-                    onWriteAgain={handleWriteAgain}
-                  />
-                </>
-              )}
-            </>
-          )}
-        </div>
-        <footer className="text-center text-gray-500 text-sm">
+              </>
+            )}
+          </>
+        )}
+        <footer className="text-center text-gray-500 text-sm mt-8">
           <p>
             &copy; {new Date().getFullYear()} OpenWrite. Inspired by daily
             challenges.
