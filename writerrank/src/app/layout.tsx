@@ -11,6 +11,7 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
 
 // Avoid build-time evaluation of Clerk which requires environment variables.
 export const dynamic = "force-dynamic";
@@ -39,14 +40,14 @@ export default function RootLayout({
               <div className="flex items-center gap-3">
                 <SignedOut>
                   <SignInButton mode="modal">
-                    <button className="px-4 py-2 rounded-md text-ow-neutral-900 hover:bg-gray-100">
+                    <Button className="px-4 py-2 text-ow-neutral-900 hover:bg-gray-100">
                       Sign In
-                    </button>
+                    </Button>
                   </SignInButton>
                   <SignUpButton mode="modal">
-                    <button className="px-4 py-2 rounded-md bg-ow-orange-500 text-white">
+                    <Button className="px-4 py-2 bg-ow-orange-500 text-white">
                       Sign Up
-                    </button>
+                    </Button>
                   </SignUpButton>
                 </SignedOut>
                 <SignedIn>

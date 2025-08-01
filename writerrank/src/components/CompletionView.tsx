@@ -1,6 +1,7 @@
 // src/components/CompletionView.tsx
 import React from 'react';
 import EmailForm from './EmailForm';
+import { Button } from './ui/button';
 
 interface CompletionViewProps {
   submission: string;
@@ -24,12 +25,12 @@ const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentProm
         />
       </div>
 
-      <button
+      <Button
         onClick={onWriteAgain}
-        className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        className="px-6 py-2 bg-indigo-600 text-white font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
       >
         Ready for Tomorrow&apos;s Prompt
-      </button>
+      </Button>
       <p className="text-sm text-gray-500 mt-2">(Or check back after midnight for a new prompt)</p>
     </div>
   );

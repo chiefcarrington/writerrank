@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Button } from './ui/button';
+import { Textarea } from './ui/textarea';
 
 interface WritingAreaProps {
   isWritingActive: boolean;
@@ -90,7 +92,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       <div className="relative rounded-lg overflow-hidden shadow-inner">
-        <textarea
+        <Textarea
           ref={textAreaRef}
           value={text}
           onChange={handleTextChange}
@@ -101,7 +103,7 @@ const WritingArea: React.FC<WritingAreaProps> = ({
           }
           disabled={locked || !isWritingActive}
           aria-label="Writing input"
-          className="min-h-[320px] w-full resize-none border-none rounded-none
+          className="min-h-[320px] w-full border-none rounded-none
                      text-base leading-relaxed text-ow-neutral-900
                      bg-white/60 backdrop-blur-sm shadow-inner
                      focus:ring-ow-orange-500 focus:border-ow-orange-500"
@@ -136,25 +138,24 @@ const WritingArea: React.FC<WritingAreaProps> = ({
             )}
 
             {!isWritingActive && !locked && (
-              <button
-                onClick={() => { setText(''); onStartWriting(); }}
-                className="px-6 py-2 rounded-md shadow-lg
-                           bg-ow-orange-500 text-white
-                           hover:bg-ow-orange-500/90"
+              <Button
+                onClick={() => {
+                  setText('');
+                  onStartWriting();
+                }}
+                className="px-6 py-2 shadow-lg bg-ow-orange-500 text-white hover:bg-ow-orange-500/90"
               >
                 Start
-              </button>
+              </Button>
             )}
 
             {isWritingActive && (
-              <button
+              <Button
                 onClick={handleManualSubmit}
-                className="px-6 py-2 rounded-md shadow-lg
-                           bg-ow-orange-500 text-white
-                           hover:bg-ow-orange-500/90"
+                className="px-6 py-2 shadow-lg bg-ow-orange-500 text-white hover:bg-ow-orange-500/90"
               >
                 Submit
-              </button>
+              </Button>
             )}
           </div>
         </div>
