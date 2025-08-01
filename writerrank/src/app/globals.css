@@ -3,20 +3,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional: Add some basic body styling */
 @layer base {
+  :root {
+    /* OpenWrite color palette */
+    --ow-orange-50: #FFF8F2;
+    --ow-orange-500: #FF6B00;
+    --ow-neutral-900: #111827;
+    --ow-neutral-50: #FFFFFF;
+  }
+
   body {
-    @apply bg-gray-100 text-gray-800 font-sans;
+    @apply bg-ow-orange-50 text-ow-neutral-900 font-sans;
   }
 }
 
 @layer base {
-  :root {
-    /* Use explicit color values to avoid theme resolution issues */
-    --ow-orange-50: #fff7ed;
-    --ow-orange-500: #f97316;
-  }
-
   .primary {
     @apply text-ow-orange-500;
   }

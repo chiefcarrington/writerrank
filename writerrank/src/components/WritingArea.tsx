@@ -95,6 +95,12 @@ const WritingArea: React.FC<WritingAreaProps> = ({
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
   };
 
+  const getTimerColor = () => {
+    if (timeLeft <= 30) return 'text-red-500';
+    if (timeLeft <= 60) return 'text-ow-orange-500';
+    return 'text-ow-neutral-50';
+  };
+
   const handleManualSubmit = () => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -103,78 +109,61 @@ const WritingArea: React.FC<WritingAreaProps> = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto space-y-4">
       <textarea
         ref={textAreaRef}
         value={text}
         onChange={handleTextChange}
-        placeholder={isWritingActive ? "Start writing..." : "Click Start to begin..."}
+        placeholder={
+          isWritingActive
+            ? 'Start writing...'
+            : 'Click START to begin your 3-minute writing challenge'
+        }
         disabled={locked || !isWritingActive}
-        className="w-full h-64 p-4 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 resize-none text-base"
+        className="min-h-[320px] w-full border border-gray-300 resize-none p-4 rounded-md shadow-inner focus:ring-ow-orange-500 focus:border-ow-orange-500 text-base"
         aria-label="Writing input"
       />
 
-      <progress
-        id="timer"
-        max={WRITING_DURATION_SECONDS}
-        value={WRITING_DURATION_SECONDS - timeLeft}
-        className="w-full h-2 mt-2"
-        style={{ accentColor: timeLeft <= 10 ? 'red' : 'green' }}
-      />
-
-      {/* Container for bottom controls */}
-      <div className="mt-4 flex justify-between items-center">
-        {/* Checkbox appears only when writing is active */}
-        <div className="flex-grow">
-            {isWritingActive && (
-                <label htmlFor="anonymous-checkbox" className="flex items-center text-sm text-gray-600 cursor-pointer">
-                    <input
-                        id="anonymous-checkbox"
-                        type="checkbox"
-                        checked={isAnonymous}
-                        onChange={(e) => setIsAnonymous(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="ml-2">Post anonymously</span>
-                </label>
-            )}
+      <div className="bg-ow-neutral-900 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4 text-sm text-ow-neutral-50/80">
+          {isWritingActive && (
+            <label htmlFor="anonymous-checkbox" className="flex items-center cursor-pointer">
+              <input
+                id="anonymous-checkbox"
+                type="checkbox"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-ow-orange-500 focus:ring-ow-orange-500"
+              />
+              <span className="ml-2">Post anonymously</span>
+            </label>
+          )}
+          <span>{text.length} characters</span>
         </div>
 
-        {/* Buttons on the right */}
         <div className="flex items-center gap-4">
-            {!isWritingActive && !locked && (
+          {isWritingActive && (
+            <span className={`font-mono text-lg ${getTimerColor()}`}>{formatTime(timeLeft)}</span>
+          )}
+          {!isWritingActive && !locked && (
             <button
-                onClick={() => {
-                setText("");
+              onClick={() => {
+                setText('');
                 onStartWriting();
-                }}
-                className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700"
+              }}
+              className="px-6 py-2 bg-ow-orange-500 text-white font-semibold rounded-md hover:bg-ow-orange-500/90"
             >
-                Start
+              Start
             </button>
-            )}
-
-            {isWritingActive && (
-            <>
-                <button
-                onClick={handleManualSubmit}
-                className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
-                >
-                Submit
-                </button>
-                <div
-                className={`px-6 py-2 text-white font-semibold rounded-md ${timeLeft <= 10 ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}
-                >
-                Time Left: {formatTime(timeLeft)}
-                </div>
-            </>
-            )}
-            
-            {locked && !isWritingActive && (
-                <div className="px-6 py-2 bg-red-500 text-white font-semibold rounded-md">
-                    Time Up! {formatTime(0)}
-                </div>
-            )}
+          )}
+          {isWritingActive && (
+            <button
+              onClick={handleManualSubmit}
+              className="px-6 py-2 bg-ow-orange-500 text-white font-semibold rounded-md hover:bg-ow-orange-500/90"
+            >
+              Submit
+            </button>
+          )}
         </div>
       </div>
     </div>
