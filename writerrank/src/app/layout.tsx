@@ -37,6 +37,9 @@ export default function RootLayout({
                 <h1 className="text-2xl font-bold text-[color:var(--ow-neutral-900)]">OpenWrite</h1>
               </a>
               <div className="flex items-center gap-3">
+                <a href="/donate" className="text-sm text-[color:var(--ow-neutral-900)] hover:underline">
+                  Support
+                </a>
                 <SignedOut>
                   <SignInButton mode="modal">
                     <button className="px-4 py-2 rounded-md text-[color:var(--ow-neutral-900)] hover:bg-gray-100">
