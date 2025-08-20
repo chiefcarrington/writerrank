@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 import { useSearchParams } from 'next/navigation';
 import dynamicImport from 'next/dynamic';
 import { Suspense } from 'react';
+import Link from 'next/link';
 
 const EmailForm = dynamicImport(() => import('@/components/EmailForm'), { ssr: false });
 
@@ -23,6 +24,18 @@ export default function DonePage() {
         )}
         <Suspense fallback={<div>Loading form...</div>}>
           <EmailForm />
+          {/* Add after EmailForm component */}
+          <div className="mt-6 text-center border-t border-gray-200 pt-6">
+            <p className="text-sm text-gray-600 mb-3">
+              Curious about what's coming next for OpenWrite?
+            </p>
+            <Link
+              href="/about"
+              className="text-ow-orange-500 hover:underline font-medium transition-colors"
+            >
+              Read our story and roadmap →
+            </Link>
+          </div>
         </Suspense>
       </div>
     </main>
