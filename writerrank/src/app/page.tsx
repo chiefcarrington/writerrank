@@ -6,7 +6,6 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import PromptDisplay from '../components/PromptDisplay';
@@ -149,7 +148,7 @@ export default function HomePage() {
       <main className="container mx-auto px-6 py-12">
         {/* Prompt display and writing area */}
         {isLoadingPrompt ? (
-          <div className="text-center p-8">Loading today's prompt...</div>
+            <div className="text-center p-8">Loading today&apos;s prompt...</div>
         ) : !currentPrompt ? (
           <div className="text-center p-8 text-red-600">
             No prompt available for today. Please check back later.

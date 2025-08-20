@@ -41,7 +41,6 @@ const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentProm
           Learn About Our Mission
         </Link>
       </div>
-
     </div>
   );
 };
