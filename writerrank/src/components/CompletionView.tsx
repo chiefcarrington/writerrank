@@ -8,10 +8,9 @@ import EmailForm from './EmailForm';
 interface CompletionViewProps {
   submission: string;
   currentPrompt: string | null;
-  onWriteAgain: () => void;
 }
 
-const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentPrompt, onWriteAgain }) => {
+const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentPrompt }) => {
   return (
     <div className="w-full max-w-2xl mx-auto my-8 p-6 bg-white rounded-lg shadow-md text-center">
       <h2 className="text-3xl font-bold text-[color:var(--ow-orange-500)] mb-4">Well Done!</h2>
@@ -43,13 +42,6 @@ const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentProm
         </Link>
       </div>
 
-      <button
-        onClick={onWriteAgain}
-        className="px-6 py-2 bg-[color:var(--ow-orange-500)] text-white font-semibold rounded-md hover:bg-[color:var(--ow-orange-500)]/90"
-      >
-        Ready for Tomorrow&apos;s Prompt
-      </button>
-      <p className="text-sm text-gray-500 mt-2">(Or check back after midnight for a new prompt)</p>
     </div>
   );
 };
