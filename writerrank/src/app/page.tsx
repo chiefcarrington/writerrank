@@ -136,10 +136,6 @@ export default function HomePage() {
     [currentPrompt, user, handleSaveSubmissionToDb],
   );
 
-  const handleWriteAgain = () => {
-    setupDailyChallengeState();
-  };
-
   return (
     <>
       <Head>
@@ -189,7 +185,6 @@ export default function HomePage() {
                 <CompletionView
                   submission={submission}
                   currentPrompt={currentPrompt.prompt_text}
-                  onWriteAgain={handleWriteAgain}
                 />
               </>
             )}
