@@ -1,9 +1,9 @@
 // src/components/CompletionView.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
+import Link from 'next/link';
 import EmailForm from './EmailForm';
-import DonationWidget from './DonationWidget';
 
 interface CompletionViewProps {
   submission: string;
@@ -12,7 +12,6 @@ interface CompletionViewProps {
 }
 
 const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentPrompt, onWriteAgain }) => {
-  const [showDonation, setShowDonation] = useState(true);
   return (
     <div className="w-full max-w-2xl mx-auto my-8 p-6 bg-white rounded-lg shadow-md text-center">
       <h2 className="text-3xl font-bold text-[color:var(--ow-orange-500)] mb-4">Well Done!</h2>
@@ -28,26 +27,21 @@ const CompletionView: React.FC<CompletionViewProps> = ({ submission, currentProm
         />
       </div>
 
-      {showDonation && (
-        <div className="my-8 border-t border-gray-200 pt-8">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold text-[color:var(--ow-neutral-900)] mb-2">
-              Love OpenWrite? ❤️
-            </h3>
-            <p className="text-gray-600 text-sm">
-              Support our daily writing challenges with a tip!
-            </p>
-          </div>
-          <DonationWidget />
-          <button
-            type="button"
-            onClick={() => setShowDonation(false)}
-            className="mt-4 text-sm text-gray-500 hover:text-gray-700"
-          >
-            Not now
-          </button>
-        </div>
-      )}
+      {/* Replace donation section with About CTA */}
+      <div className="my-8 border-t border-gray-200 pt-8 text-center">
+        <h3 className="text-lg font-semibold text-ow-neutral-900 mb-2">
+          Want to learn more about OpenWrite?
+        </h3>
+        <p className="text-gray-600 text-sm mb-4">
+          Discover our vision, roadmap, and how you can support independent software.
+        </p>
+        <Link
+          href="/about"
+          className="inline-block px-6 py-3 bg-ow-orange-500 text-white font-semibold rounded-md hover:bg-ow-orange-500/90 transition-colors"
+        >
+          Learn About Our Mission
+        </Link>
+      </div>
 
       <button
         onClick={onWriteAgain}
