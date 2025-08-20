@@ -37,8 +37,8 @@ export default function RootLayout({
                 <h1 className="text-2xl font-bold text-[color:var(--ow-neutral-900)]">OpenWrite</h1>
               </a>
               <div className="flex items-center gap-3">
-                <a href="/donate" className="text-sm text-[color:var(--ow-neutral-900)] hover:underline">
-                  Support
+                <a href="/about" className="text-sm text-[color:var(--ow-neutral-900)] hover:underline">
+                  About
                 </a>
                 <SignedOut>
                   <SignInButton mode="modal">
